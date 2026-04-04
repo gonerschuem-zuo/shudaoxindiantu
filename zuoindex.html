@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书道心电图 - 书法卡片展示</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', 'SimSun', serif;
+            background: linear-gradient(135deg, #e8e8e8 0%, #d8d8d8 50%, #e0e0e0 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #4a4a4a;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            color: #6a6a6a;
+            font-style: italic;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: linear-gradient(145deg, #f8f8f8 0%, #f0f0f0 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(100, 100, 100, 0.15),
+                        0 5px 15px rgba(100, 100, 100, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #d0d0d0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #888, #666, #888);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(100, 100, 100, 0.25),
+                        0 10px 25px rgba(100, 100, 100, 0.15);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, #888 0%, #666 100%);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-image img {
+            transform: scale(1.1);
+        }
+
+        .card-placeholder {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+        }
+
+        .card-name {
+            font-size: 1.5rem;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-name .icon {
+            font-size: 1.3rem;
+        }
+
+        .card-age {
+            display: inline-block;
+            background: linear-gradient(135deg, #888, #666);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .card-style {
+            color: #5a5a5a;
+            font-size: 1rem;
+            line-height: 1.8;
+            padding: 15px;
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 12px;
+            border-left: 4px solid #888;
+        }
+
+        .card-style-title {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #6a6a6a;
+            font-size: 0.9rem;
+        }
+
+        .footer .heart {
+            color: #888;
+        }
+
+        /* 装饰印章 */
+        .seal {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            border: 3px solid #c44;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #c44;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            opacity: 0.7;
+            transform: rotate(-5deg);
+        }
+
+        /* 水墨装饰 */
+        .ink-decoration {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .ink-decoration.top-left {
+            top: 0;
+            left: 0;
+            background: radial-gradient(circle at center, #000 0%, transparent 70%);
+        }
+
+        .ink-decoration.bottom-right {
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle at center, #000 0%, transparent 70%);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card-container {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .card-image {
+                height: 180px;
+            }
+        }
+
+        /* 上传按钮样式 */
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .upload-btn, .clear-btn {
+            background: linear-gradient(135deg, #888, #666);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-btn:hover, .clear-btn:hover {
+            background: linear-gradient(135deg, #666, #444);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(100, 100, 100, 0.4);
+        }
+
+        .upload-btn:disabled, .clear-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #c44, #a33);
+        }
+
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #a33, #822);
+        }
+
+        /* 存储信息显示 */
+        .storage-info {
+            font-size: 0.85rem;
+            color: #666;
+            background: rgba(128, 128, 128, 0.1);
+            padding: 8px 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .storage-info.warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: #e65100;
+        }
+
+        .storage-info.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #c62828;
+        }
+
+        /* 卡片选中状态 */
+        .card.selected {
+            border: 3px solid #666;
+            box-shadow: 0 15px 40px rgba(100, 100, 100, 0.35);
+        }
+
+        .card .select-hint {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(102, 102, 102, 0.9);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card:hover .select-hint {
+            opacity: 1;
+        }
+
+        .card.selected .select-hint {
+            background: #4CAF50;
+            opacity: 1;
+        }
+
+        /* 隐藏文件输入框 */
+        #fileInput {
+            display: none;
+        }
+
+        /* 加载动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out forwards;
+            cursor: pointer;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* 轮播图样式 */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .carousel-slides {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 10;
+            opacity: 0;
+        }
+
+        .card:hover .carousel-nav {
+            opacity: 1;
+        }
+
+        .carousel-nav:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-nav.prev {
+            left: 10px;
+        }
+
+        .carousel-nav.next {
+            right: 10px;
+        }
+
+        .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .carousel-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-indicator.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .carousel-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 10;
+        }
+
+        /* 单图时隐藏轮播控件 */
+        .carousel-container.single-image .carousel-nav,
+        .carousel-container.single-image .carousel-indicators,
+        .carousel-container.single-image .carousel-counter {
+            display: none;
+        }
+
+        /* 暂停自动播放 */
+        .carousel-container:hover .carousel-slides {
+            animation-play-state: paused;
+        }
+
+        /* 编辑功能样式 */
+        .edit-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .edit-btn:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .edit-btn.active {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .edit-btn.active:hover {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        }
+
+        /* 编辑模式下的卡片样式 */
+        .card.editing {
+            border: 3px solid #4CAF50;
+            box-shadow: 0 15px 50px rgba(76, 175, 80, 0.3);
+            transform: scale(1.02);
+        }
+
+        .card.editing .card-image {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .card.editing .seal {
+            opacity: 0.3;
+        }
+
+        /* 编辑输入框样式 */
+        .edit-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Noto Serif SC', 'SimSun', serif;
+            font-size: inherit;
+            color: #333;
+            background: white;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .edit-input.title-input {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .edit-input.age-input {
+            display: inline-block;
+            width: auto;
+            min-width: 200px;
+        }
+
+        .edit-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Noto Serif SC', 'SimSun', serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .edit-textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        /* 编辑按钮组 */
+        .edit-actions {
+            display: none;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .card.editing .edit-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .cancel-btn {
+            background: linear-gradient(135deg, #9e9e9e, #757575);
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: linear-gradient(135deg, #757575, #616161);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+        }
+
+        /* 编辑模式下的显示元素隐藏 */
+        .card.editing .display-mode {
+            display: none;
+        }
+
+        /* 显示模式下的编辑元素隐藏 */
+        .edit-mode {
+            display: none;
+        }
+
+        .card.editing .edit-mode {
+            display: block;
+        }
+
+        /* 编辑提示 */
+        .edit-hint {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+            z-index: 1000;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .edit-hint.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* 图标输入框 */
+        .icon-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .icon-input {
+            width: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        /* 卡片名称编辑容器 */
+        .card-name-edit {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* GIF导出按钮样式 */
+        .gif-export-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(2px);
+        }
+
+        .gif-export-btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+
+        .gif-export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .gif-export-btn.generating {
+            background: rgba(76, 175, 80, 0.6);
+            color: white;
+        }
+
+        .card-image:hover .gif-export-btn.show {
+            display: flex;
+        }
+
+        /* 单图时不显示导出按钮 */
+        .carousel-container.single-image .gif-export-btn {
+            display: none !important;
+        }
+
+        /* 删除按钮样式 */
+        .carousel-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(244, 67, 54, 0.85);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            z-index: 25;
+            opacity: 0;
+        }
+
+        .carousel-delete-btn:hover {
+            background: rgba(211, 47, 47, 0.95);
+            transform: scale(1.1);
+        }
+
+        .card:hover .carousel-delete-btn {
+            opacity: 1;
+        }
+
+        /* 编辑模式下显示删除按钮 */
+        .card.editing .carousel-delete-btn {
+            display: flex !important;
+            opacity: 1;
+        }
+
+        /* 鼠标悬停轮播时显示删除按钮 */
+        .carousel-container:hover .carousel-delete-btn.show {
+            display: flex;
+        }
+
+        /* 删除确认对话框样式 */
+        .delete-confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .delete-confirm-dialog.show {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .delete-confirm-box {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 320px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delete-confirm-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .delete-confirm-box p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .delete-confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .delete-confirm-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-confirm-btn.confirm {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .delete-confirm-btn.confirm:hover {
+            background: linear-gradient(135deg, #d32f2f, #c62828);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .delete-confirm-btn.cancel {
+            background: linear-gradient(135deg, #9e9e9e, #757575);
+            color: white;
+        }
+
+        .delete-confirm-btn.cancel:hover {
+            background: linear-gradient(135deg, #757575, #616161);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+        }
+
+        /* GIF生成进度提示 */
+        .gif-progress-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .gif-progress-toast.show {
+            display: flex;
+            animation: toastFadeIn 0.3s ease-out;
+        }
+
+        @keyframes toastFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .gif-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 水墨装饰 -->
+    <div class="ink-decoration top-left"></div>
+    <div class="ink-decoration bottom-right"></div>
+
+    <!-- 头部 -->
+    <header class="header">
+        <h1>✨ 书道心电图 ✨</h1>
+        <p class="subtitle">传承千年墨韵，展现书法之美</p>
+    </header>
+
+    <!-- 编辑提示 -->
+    <div class="edit-hint" id="editHint">
+        <span>✏️</span> 正在编辑模式 - 点击"保存"保存更改，或"取消"放弃更改
+    </div>
+
+    <!-- 照片上传区域 -->
+    <div class="upload-section">
+        <div class="upload-controls">
+            <button class="upload-btn" id="uploadBtn" disabled>
+                <span>📷</span> 选择照片（支持多选，先点击卡片）
+            </button>
+            <button class="edit-btn" id="editBtn">
+                <span>✏️</span> 编辑信息
+            </button>
+            <button class="clear-btn" id="clearBtn">
+                <span>🗑️</span> 清理缓存
+            </button>
+        </div>
+        <div class="storage-info" id="storageInfo">
+            <span>💾</span> <span id="storageCount">已存储 0 张图片</span>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+
+    <!-- 卡片容器 -->
+    <main class="card-container">
+        <!-- 卡片 1 -->
+        <div class="card" data-card-id="1">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Lantingji_Xu.jpg/440px-Lantingji_Xu.jpg" alt="兰亭序" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">王</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>王羲之</h2>
+                <span class="card-age">303年-361年（东晋）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>书圣，承钟繇、卫铄之法，创"王体"行书。笔法飘逸自然，如行云流水，其《兰亭序》被誉为"天下第一行书"。风格典雅秀逸，含蓄平和，对后世影响深远。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="王羲之" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="303年-361年（东晋）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">书圣，承钟繇、卫铄之法，创"王体"行书。笔法飘逸自然，如行云流水，其《兰亭序》被誉为"天下第一行书"。风格典雅秀逸，含蓄平和，对后世影响深远。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">书圣</div>
+        </div>
+
+        <!-- 卡片 2 -->
+        <div class="card" data-card-id="2">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Yan_Zhenqing_Ji_Zhi_Wen_Gao.jpg/440px-Yan_Zhenqing_Ji_Zhi_Wen_Gao.jpg" alt="祭侄文稿" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">颜</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>颜真卿</h2>
+                <span class="card-age">709年-785年（唐代）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>初学褚遂良，后师张旭，创"颜体"楷书。其书风雄浑宽博，气势磅礴，如盛唐气象。《祭侄文稿》笔势圆劲，激越顿挫，被誉为"天下第二行书"。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="颜真卿" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="709年-785年（唐代）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">初学褚遂良，后师张旭，创"颜体"楷书。其书风雄浑宽博，气势磅礴，如盛唐气象。《祭侄文稿》笔势圆劲，激越顿挫，被誉为"天下第二行书"。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">鲁公</div>
+        </div>
+
+        <!-- 卡片 3 -->
+        <div class="card" data-card-id="3">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Xuan_Mi_Ta_Bei.jpg/440px-Xuan_Mi_Ta_Bei.jpg" alt="玄秘塔碑" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">柳</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>柳公权</h2>
+                <span class="card-age">778年-865年（唐代）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>学王羲之，兼取颜真卿，创"柳体"。其字骨力刚健，结构严谨，笔锋锐利，有"颜筋柳骨"之称。与颜真卿并称"颜柳"，是楷书典范之一。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="柳公权" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="778年-865年（唐代）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">学王羲之，兼取颜真卿，创"柳体"。其字骨力刚健，结构严谨，笔锋锐利，有"颜筋柳骨"之称。与颜真卿并称"颜柳"，是楷书典范之一。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">诚悬</div>
+        </div>
+
+        <!-- 卡片 4 -->
+        <div class="card" data-card-id="4">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Huangzhou_Han Shi_Tie.jpg/440px-Huangzhou_Han_Shi_Tie.jpg" alt="寒食帖" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">苏</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>苏轼</h2>
+                <span class="card-age">1037年-1101年（北宋）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>宋四家之首，学二王、颜、柳，自成一家。其书风丰腴跌宕，天真烂漫，重气韵而轻法度。《寒食帖》笔势起伏跌宕，气势奔放，为"天下第三行书"。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="苏轼" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="1037年-1101年（北宋）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">宋四家之首，学二王、颜、柳，自成一家。其书风丰腴跌宕，天真烂漫，重气韵而轻法度。《寒食帖》笔势起伏跌宕，气势奔放，为"天下第三行书"。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">东坡</div>
+        </div>
+
+        <!-- 卡片 5 -->
+        <div class="card" data-card-id="5">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Mi_Fu_Shu_Su_Tie.jpg/440px-Mi_Fu_Shu_Su_Tie.jpg" alt="蜀素帖" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">米</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>米芾</h2>
+                <span class="card-age">1051年-1107年（北宋）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>宋四家之一，集晋唐书法之大成。其字八面出锋，沉着痛快，变化莫测。擅长行草，笔势跳荡，结构奇特，有"米颠"之称，是尚意书风的代表。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="米芾" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="1051年-1107年（北宋）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">宋四家之一，集晋唐书法之大成。其字八面出锋，沉着痛快，变化莫测。擅长行草，笔势跳荡，结构奇特，有"米颠"之称，是尚意书风的代表。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">襄阳</div>
+        </div>
+
+        <!-- 卡片 6 -->
+        <div class="card" data-card-id="6">
+            <div class="select-hint">👆 点击选中</div>
+            <div class="card-image">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Zhao_Mengfu_-_Xian_Temple_Inscription.jpg/440px-Zhao_Mengfu_-_Xian_Temple_Inscription.jpg" alt="玄妙观重修三门记" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="card-placeholder" style="display:none">赵</span>
+            </div>
+
+            <!-- 显示模式 -->
+            <div class="display-mode">
+                <h2 class="card-name"><span class="icon">🖌️</span>赵孟頫</h2>
+                <span class="card-age">1254年-1322年（元代）</span>
+                <div class="card-style">
+                    <div class="card-style-title">风格传承</div>
+                    <p>复古主义代表，力追晋唐，兼学篆隶。其书风圆润秀丽，流畅自然，深得二王神韵。楷书与欧阳询、颜真卿、柳公权并称"楷书四大家"。</p>
+                </div>
+            </div>
+
+            <!-- 编辑模式 -->
+            <div class="edit-mode">
+                <div class="card-name-edit">
+                    <input type="text" class="edit-input icon-input" value="🖌️" data-field="icon" maxlength="2">
+                    <input type="text" class="edit-input title-input" value="赵孟頫" data-field="name">
+                </div>
+                <input type="text" class="edit-input age-input" value="1254年-1322年（元代）" data-field="age">
+                <div class="card-style">
+                    <input type="text" class="edit-input" value="风格传承" data-field="styleTitle" style="font-weight: bold; color: #666; margin-bottom: 8px;">
+                    <textarea class="edit-textarea" data-field="styleDesc">复古主义代表，力追晋唐，兼学篆隶。其书风圆润秀丽，流畅自然，深得二王神韵。楷书与欧阳询、颜真卿、柳公权并称"楷书四大家"。</textarea>
+                </div>
+            </div>
+
+            <!-- 编辑按钮组 -->
+            <div class="edit-actions">
+                <button class="action-btn save-btn">
+                    <span>💾</span> 保存
+                </button>
+                <button class="action-btn cancel-btn">
+                    <span>❌</span> 取消
+                </button>
+            </div>
+
+            <div class="seal">松雪</div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>用 <span class="heart">❤️</span> 传承中华书法文化</p>
+    </footer>
+
+    <!-- GIF生成进度提示 -->
+    <div class="gif-progress-toast" id="gifProgressToast">
+        <div class="gif-spinner"></div>
+        <span id="gifProgressText">正在生成GIF动图...</span>
+    </div>
+
+    <!-- 删除确认对话框 -->
+    <div class="delete-confirm-dialog" id="deleteConfirmDialog">
+        <div class="delete-confirm-box">
+            <h3>🗑️ 确认删除</h3>
+            <p>确定要删除这张图片吗？<br>此操作不可恢复。</p>
+            <div class="delete-confirm-actions">
+                <button class="delete-confirm-btn cancel" id="deleteCancelBtn">取消</button>
+                <button class="delete-confirm-btn confirm" id="deleteConfirmBtn">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript代码：处理卡片选择和照片上传 -->
+    <script>
+        // ==================== 全局变量 ====================
+        let selectedCard = null;  // 当前选中的卡片
+        let isEditMode = false;  // 是否处于编辑模式
+        let editBtn = null;  // 编辑按钮
+        const uploadBtn = document.getElementById('uploadBtn');  // 上传按钮
+        const clearBtn = document.getElementById('clearBtn');  // 清理按钮
+        const fileInput = document.getElementById('fileInput');  // 文件输入框
+        const storageInfo = document.getElementById('storageInfo');  // 存储信息显示
+        const storageCount = document.getElementById('storageCount');  // 存储计数显示
+        const cards = document.querySelectorAll('.card');  // 所有卡片
+
+        // ==================== 配置常量 ====================
+        const STORAGE_KEY = 'calligraphy_images';  // localStorage键名
+        const CARD_INFO_KEY = 'calligraphy_card_info';  // 卡片信息localStorage键名
+        const MAX_IMAGES = 1000;  // 最大图片数量
+        const MAX_IMAGE_SIZE = 10 * 1024 * 1024;  // 最大图片大小 10MB
+        const COMPRESS_TARGET_WIDTH = 800;  // 压缩目标宽度
+        const COMPRESS_QUALITY = 0.85;  // 压缩质量（0-1）
+        const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
+        const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
+
+        // ==================== 编辑模式功能 ====================
+
+        /**
+         * 初始化编辑按钮
+         */
+        function initEditButton() {
+            editBtn = document.getElementById('editBtn');
+            editBtn.addEventListener('click', toggleEditMode);
+        }
+
+        /**
+         * 切换编辑模式
+         */
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editHint = document.getElementById('editHint');
+
+            if (isEditMode) {
+                // 进入编辑模式
+                editBtn.classList.add('active');
+                editBtn.innerHTML = '<span>🔒</span> 退出编辑';
+                editHint.classList.add('show');
+
+                // 为所有卡片启用编辑模式
+                cards.forEach(card => {
+                    card.classList.add('editing');
+                    initCardEditActions(card);
+                });
+
+                // 禁用上传功能
+                uploadBtn.disabled = true;
+                if (selectedCard) {
+                    selectedCard.classList.remove('selected');
+                    const hint = selectedCard.querySelector('.select-hint');
+                    if (hint) hint.textContent = '👆 点击选中';
+                }
+                selectedCard = null;
+
+            } else {
+                // 退出编辑模式
+                editBtn.classList.remove('active');
+                editBtn.innerHTML = '<span>✏️</span> 编辑信息';
+                editHint.classList.remove('show');
+
+                // 为所有卡片禁用编辑模式
+                cards.forEach(card => {
+                    card.classList.remove('editing');
+                    cancelCardEdit(card);
+                });
+
+                // 恢复上传功能
+                uploadBtn.disabled = true;
+            }
+        }
+
+        /**
+         * 初始化卡片的编辑操作按钮
+         * @param {HTMLElement} card 卡片元素
+         */
+        function initCardEditActions(card) {
+            const saveBtn = card.querySelector('.save-btn');
+            const cancelBtn = card.querySelector('.cancel-btn');
+
+            if (saveBtn) {
+                saveBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    saveCardEdit(card);
+                };
+            }
+
+            if (cancelBtn) {
+                cancelBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    cancelCardEdit(card);
+                };
+            }
+        }
+
+        /**
+         * 保存卡片编辑
+         * @param {HTMLElement} card 卡片元素
+         */
+        function saveCardEdit(card) {
+            const cardId = card.getAttribute('data-card-id');
+            const editInputs = card.querySelectorAll('.edit-input, .edit-textarea');
+
+            // 收集编辑的数据
+            const editData = {};
+            editInputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                editData[field] = input.value;
+            });
+
+            // 更新显示模式的内容
+            updateCardDisplay(card, editData);
+
+            // 保存到localStorage
+            saveCardInfo(cardId, editData);
+
+            // 显示保存成功提示
+            const hint = card.querySelector('.select-hint');
+            const originalText = hint ? hint.textContent : '';
+            if (hint) hint.textContent = '✅ 已保存';
+
+            setTimeout(() => {
+                if (hint) hint.textContent = originalText;
+            }, 1500);
+        }
+
+        /**
+         * 取消卡片编辑
+         * @param {HTMLElement} card 卡片元素
+         */
+        function cancelCardEdit(card) {
+            const cardId = card.getAttribute('data-card-id');
+            const editInputs = card.querySelectorAll('.edit-input, .edit-textarea');
+
+            // 从localStorage恢复原始数据
+            const savedData = getCardInfo(cardId);
+            const defaultData = getDefaultCardData(cardId);
+            const data = savedData || defaultData;
+
+            // 恢复输入框的值
+            editInputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                if (data[field] !== undefined) {
+                    input.value = data[field];
+                }
+            });
+        }
+
+        /**
+         * 更新卡片显示内容
+         * @param {HTMLElement} card 卡片元素
+         * @param {Object} data 卡片数据
+         */
+        function updateCardDisplay(card, data) {
+            const displayMode = card.querySelector('.display-mode');
+            if (!displayMode) return;
+
+            const nameEl = displayMode.querySelector('.card-name');
+            const ageEl = displayMode.querySelector('.card-age');
+            const styleTitleEl = displayMode.querySelector('.card-style-title');
+            const styleDescEl = displayMode.querySelector('.card-style p');
+
+            if (nameEl && data.icon && data.name) {
+                nameEl.innerHTML = `<span class="icon">${data.icon}</span>${data.name}`;
+            }
+
+            if (ageEl && data.age) {
+                ageEl.textContent = data.age;
+            }
+
+            if (styleTitleEl && data.styleTitle) {
+                styleTitleEl.textContent = data.styleTitle;
+            }
+
+            if (styleDescEl && data.styleDesc) {
+                styleDescEl.textContent = data.styleDesc;
+            }
+        }
+
+        /**
+         * 获取卡片的默认数据
+         * @param {string} cardId 卡片ID
+         * @returns {Object} 默认数据
+         */
+        function getDefaultCardData(cardId) {
+            const defaults = {
+                '1': {
+                    icon: '🖌️',
+                    name: '王羲之',
+                    age: '303年-361年（东晋）',
+                    styleTitle: '风格传承',
+                    styleDesc: '书圣，承钟繇、卫铄之法，创"王体"行书。笔法飘逸自然，如行云流水，其《兰亭序》被誉为"天下第一行书"。风格典雅秀逸，含蓄平和，对后世影响深远。'
+                },
+                '2': {
+                    icon: '🖌️',
+                    name: '颜真卿',
+                    age: '709年-785年（唐代）',
+                    styleTitle: '风格传承',
+                    styleDesc: '初学褚遂良，后师张旭，创"颜体"楷书。其书风雄浑宽博，气势磅礴，如盛唐气象。《祭侄文稿》笔势圆劲，激越顿挫，被誉为"天下第二行书"。'
+                },
+                '3': {
+                    icon: '🖌️',
+                    name: '柳公权',
+                    age: '778年-865年（唐代）',
+                    styleTitle: '风格传承',
+                    styleDesc: '学王羲之，兼取颜真卿，创"柳体"。其字骨力刚健，结构严谨，笔锋锐利，有"颜筋柳骨"之称。与颜真卿并称"颜柳"，是楷书典范之一。'
+                },
+                '4': {
+                    icon: '🖌️',
+                    name: '苏轼',
+                    age: '1037年-1101年（北宋）',
+                    styleTitle: '风格传承',
+                    styleDesc: '宋四家之首，学二王、颜、柳，自成一家。其书风丰腴跌宕，天真烂漫，重气韵而轻法度。《寒食帖》笔势起伏跌宕，气势奔放，为"天下第三行书"。'
+                },
+                '5': {
+                    icon: '🖌️',
+                    name: '米芾',
+                    age: '1051年-1107年（北宋）',
+                    styleTitle: '风格传承',
+                    styleDesc: '宋四家之一，集晋唐书法之大成。其字八面出锋，沉着痛快，变化莫测。擅长行草，笔势跳荡，结构奇特，有"米颠"之称，是尚意书风的代表。'
+                },
+                '6': {
+                    icon: '🖌️',
+                    name: '赵孟頫',
+                    age: '1254年-1322年（元代）',
+                    styleTitle: '风格传承',
+                    styleDesc: '复古主义代表，力追晋唐，兼学篆隶。其书风圆润秀丽，流畅自然，深得二王神韵。楷书与欧阳询、颜真卿、柳公权并称"楷书四大家"。'
+                }
+            };
+            return defaults[cardId] || {};
+        }
+
+        /**
+         * 保存卡片信息到localStorage
+         * @param {string} cardId 卡片ID
+         * @param {Object} data 卡片数据
+         */
+        function saveCardInfo(cardId, data) {
+            try {
+                const allCardInfo = getStoredCardInfo();
+                allCardInfo[cardId] = data;
+                localStorage.setItem(CARD_INFO_KEY, JSON.stringify(allCardInfo));
+            } catch (e) {
+                console.error('保存卡片信息失败:', e);
+            }
+        }
+
+        /**
+         * 从localStorage获取卡片信息
+         * @param {string} cardId 卡片ID
+         * @returns {Object|null} 卡片数据
+         */
+        function getCardInfo(cardId) {
+            const allCardInfo = getStoredCardInfo();
+            return allCardInfo[cardId] || null;
+        }
+
+        /**
+         * 获取所有卡片信息
+         * @returns {Object} 所有卡片数据
+         */
+        function getStoredCardInfo() {
+            try {
+                const data = localStorage.getItem(CARD_INFO_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                console.error('读取卡片信息失败:', e);
+                return {};
+            }
+        }
+
+        /**
+         * 加载保存的卡片信息
+         */
+        function loadSavedCardInfo() {
+            cards.forEach(card => {
+                const cardId = card.getAttribute('data-card-id');
+                const savedData = getCardInfo(cardId);
+
+                if (savedData) {
+                    updateCardDisplay(card, savedData);
+                }
+            });
+        }
+
+        // ==================== 轮播图功能 ====================
+
+        /**
+         * 为指定卡片创建轮播图
+         * @param {HTMLElement} card 卡片元素
+         * @param {Array} images 图片数组
+         */
+        function createCarousel(card, images) {
+            const cardImage = card.querySelector('.card-image');
+            if (!cardImage) return;
+
+            // 保存默认图片源
+            const existingImg = cardImage.querySelector('img');
+            if (existingImg && !existingImg.getAttribute('data-default-src')) {
+                existingImg.setAttribute('data-default-src', existingImg.src);
+            }
+
+            // 清空现有内容
+            cardImage.innerHTML = '';
+
+            if (!images || images.length === 0) {
+                // 恢复默认图片
+                const img = document.createElement('img');
+                const placeholder = document.createElement('span');
+                placeholder.className = 'card-placeholder';
+                placeholder.style.display = 'none';
+                img.src = existingImg?.getAttribute('data-default-src') || '';
+                img.onerror = function() { this.style.display='none'; placeholder.style.display='block'; };
+                cardImage.appendChild(img);
+                cardImage.appendChild(placeholder);
+                return;
+            }
+
+            // 创建轮播容器
+            const carouselContainer = document.createElement('div');
+            carouselContainer.className = 'carousel-container';
+            if (images.length === 1) {
+                carouselContainer.classList.add('single-image');
+            }
+
+            // 创建幻灯片容器
+            const slidesContainer = document.createElement('div');
+            slidesContainer.className = 'carousel-slides';
+
+            // 添加所有图片
+            images.forEach((imageData, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'carousel-slide';
+                slide.dataset.index = index;
+
+                const img = document.createElement('img');
+                img.src = imageData.data || imageData;
+                img.alt = `图片 ${index + 1}`;
+                slide.appendChild(img);
+
+                // 添加删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'carousel-delete-btn show';
+                deleteBtn.innerHTML = '&#10005;'; // × 符号
+                deleteBtn.title = '删除此图片';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    showDeleteConfirm(card, index);
+                };
+                slide.appendChild(deleteBtn);
+
+                slidesContainer.appendChild(slide);
+            });
+
+            carouselContainer.appendChild(slidesContainer);
+
+            // 如果有多张图片，添加控制元素
+            if (images.length > 1) {
+                // 添加导航按钮
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'carousel-nav prev';
+                prevBtn.innerHTML = '&#10094;'; // 左箭头
+                prevBtn.onclick = () => prevSlide(carouselContainer);
+
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'carousel-nav next';
+                nextBtn.innerHTML = '&#10095;'; // 右箭头
+                nextBtn.onclick = () => nextSlide(carouselContainer);
+
+                // 添加指示器
+                const indicators = document.createElement('div');
+                indicators.className = 'carousel-indicators';
+                images.forEach((_, index) => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'carousel-indicator' + (index === 0 ? ' active' : '');
+                    indicator.onclick = () => goToSlide(carouselContainer, index);
+                    indicators.appendChild(indicator);
+                });
+
+                // 添加计数器
+                const counter = document.createElement('div');
+                counter.className = 'carousel-counter';
+                counter.textContent = `1 / ${images.length}`;
+
+                carouselContainer.appendChild(prevBtn);
+                carouselContainer.appendChild(nextBtn);
+                carouselContainer.appendChild(indicators);
+                carouselContainer.appendChild(counter);
+
+                // 添加GIF导出按钮
+                const gifBtn = document.createElement('button');
+                gifBtn.className = 'gif-export-btn show';
+                gifBtn.innerHTML = '<span>GIF</span>';
+                gifBtn.title = '导出为GIF动图';
+                gifBtn.onclick = () => exportCardAsGif(card, images);
+                carouselContainer.appendChild(gifBtn);
+
+                // 存储轮播状态
+                carouselContainer._carousel = {
+                    currentIndex: 0,
+                    totalSlides: images.length,
+                    autoplayInterval: null
+                };
+
+                // 启动自动播放
+                startAutoplay(carouselContainer);
+
+                // 鼠标悬停时暂停
+                carouselContainer.addEventListener('mouseenter', () => stopAutoplay(carouselContainer));
+                carouselContainer.addEventListener('mouseleave', () => startAutoplay(carouselContainer));
+            }
+
+            cardImage.appendChild(carouselContainer);
+        }
+
+        /**
+         * 更新轮播图位置
+         * @param {HTMLElement} container 轮播容器
+         * @param {number} index 目标索引
+         */
+        function updateCarousel(container, index) {
+            const slides = container.querySelector('.carousel-slides');
+            const indicators = container.querySelectorAll('.carousel-indicator');
+            const counter = container.querySelector('.carousel-counter');
+            const carousel = container._carousel;
+
+            if (!slides || !carousel) return;
+
+            // 确保索引在有效范围内
+            if (index < 0) index = carousel.totalSlides - 1;
+            if (index >= carousel.totalSlides) index = 0;
+
+            // 更新当前位置
+            carousel.currentIndex = index;
+            slides.style.transform = `translateX(-${index * 100}%)`;
+
+            // 更新指示器
+            indicators.forEach((indicator, i) => {
+                indicator.classList.toggle('active', i === index);
+            });
+
+            // 更新计数器
+            if (counter) {
+                counter.textContent = `${index + 1} / ${carousel.totalSlides}`;
+            }
+        }
+
+        /**
+         * 下一张幻灯片
+         * @param {HTMLElement} container 轮播容器
+         */
+        function nextSlide(container) {
+            const carousel = container._carousel;
+            if (carousel) {
+                updateCarousel(container, carousel.currentIndex + 1);
+            }
+        }
+
+        /**
+         * 上一张幻灯片
+         * @param {HTMLElement} container 轮播容器
+         */
+        function prevSlide(container) {
+            const carousel = container._carousel;
+            if (carousel) {
+                updateCarousel(container, carousel.currentIndex - 1);
+            }
+        }
+
+        /**
+         * 跳转到指定幻灯片
+         * @param {HTMLElement} container 轮播容器
+         * @param {number} index 目标索引
+         */
+        function goToSlide(container, index) {
+            updateCarousel(container, index);
+        }
+
+        /**
+         * 启动自动播放
+         * @param {HTMLElement} container 轮播容器
+         */
+        function startAutoplay(container) {
+            const carousel = container._carousel;
+            if (!carousel || carousel.autoplayInterval) return;
+
+            carousel.autoplayInterval = setInterval(() => {
+                nextSlide(container);
+            }, CAROUSEL_AUTOPLAY_INTERVAL);
+        }
+
+        /**
+         * 停止自动播放
+         * @param {HTMLElement} container 轮播容器
+         */
+        function stopAutoplay(container) {
+            const carousel = container._carousel;
+            if (!carousel || !carousel.autoplayInterval) return;
+
+            clearInterval(carousel.autoplayInterval);
+            carousel.autoplayInterval = null;
+        }
+
+        /**
+         * 销毁轮播图
+         * @param {HTMLElement} container 轮播容器
+         */
+        function destroyCarousel(container) {
+            stopAutoplay(container);
+            container._carousel = null;
+        }
+
+        /**
+         * 重新加载所有卡片的图片
+         */
+        function reloadAllCards() {
+            const imagesData = getStoredImages();
+
+            cards.forEach(card => {
+                const cardId = card.getAttribute('data-card-id');
+                const cardImageData = imagesData[cardId];
+
+                if (cardImageData) {
+                    if (cardImageData.images && Array.isArray(cardImageData.images)) {
+                        // 新格式：多图
+                        createCarousel(card, cardImageData.images);
+                    } else if (cardImageData.data) {
+                        // 旧格式：单图
+                        createCarousel(card, [cardImageData]);
+                    }
+                } else {
+                    createCarousel(card, []);
+                }
+            });
+
+            updateStorageInfo();
+        }
+
+        // ==================== 图片删除功能 ====================
+
+        /**
+         * 显示删除确认对话框
+         * @param {HTMLElement} card 卡片元素
+         * @param {number} imageIndex 图片索引
+         */
+        function showDeleteConfirm(card, imageIndex) {
+            const dialog = document.getElementById('deleteConfirmDialog');
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
+            const cancelBtn = document.getElementById('deleteCancelBtn');
+
+            // 移除之前的事件监听器
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            // 添加新的事件监听器
+            newCancelBtn.onclick = () => {
+                dialog.classList.remove('show');
+            };
+
+            newConfirmBtn.onclick = () => {
+                deleteCardImage(card, imageIndex);
+                dialog.classList.remove('show');
+            };
+
+            // 显示对话框
+            dialog.classList.add('show');
+        }
+
+        /**
+         * 删除卡片中的指定图片
+         * @param {HTMLElement} card 卡片元素
+         * @param {number} imageIndex 图片索引
+         */
+        function deleteCardImage(card, imageIndex) {
+            const cardId = card.getAttribute('data-card-id');
+            const imagesData = getStoredImages();
+
+            // 获取当前卡片的图片
+            let currentImages = [];
+            if (imagesData[cardId] && imagesData[cardId].images) {
+                currentImages = [...imagesData[cardId].images];
+            }
+
+            // 检查索引是否有效
+            if (imageIndex < 0 || imageIndex >= currentImages.length) {
+                alert('无效的图片索引！');
+                return;
+            }
+
+            // 删除指定图片
+            currentImages.splice(imageIndex, 1);
+
+            // 更新localStorage
+            if (currentImages.length > 0) {
+                imagesData[cardId].images = currentImages;
+            } else {
+                // 如果没有图片了，删除整个卡片的数据
+                delete imagesData[cardId];
+            }
+            saveStoredImages(imagesData);
+
+            // 更新卡片显示
+            createCarousel(card, currentImages);
+
+            // 更新选中提示
+            const hint = card.querySelector('.select-hint');
+            if (hint) {
+                if (currentImages.length > 0) {
+                    hint.textContent = `✅ 已保存 ${currentImages.length} 张图片`;
+                } else {
+                    hint.textContent = '👆 点击选中';
+                }
+            }
+
+            // 显示删除成功提示
+            const remainingCount = currentImages.length;
+            if (remainingCount > 0) {
+                // 延迟一下再恢复提示文字
+                setTimeout(() => {
+                    const currentHint = card.querySelector('.select-hint');
+                    if (currentHint && currentHint.textContent.includes('已保存')) {
+                        currentHint.textContent = '👆 点击选中';
+                    }
+                }, 1500);
+            }
+        }
+
+        // ==================== GIF导出功能 ====================
+
+        /**
+         * 将卡片图片导出为GIF动图
+         * @param {HTMLElement} card 卡片元素
+         * @param {Array} images 图片数组
+         */
+        async function exportCardAsGif(card, images) {
+            // 检查是否有gifshot库
+            if (typeof gifshot === 'undefined') {
+                alert('GIF生成库未加载，请检查网络连接后刷新页面重试。');
+                return;
+            }
+
+            // 只有多张图片时才能导出GIF
+            if (!images || images.length < 2) {
+                alert('需要至少2张图片才能生成GIF动图！');
+                return;
+            }
+
+            const gifBtn = card.querySelector('.gif-export-btn');
+            const progressToast = document.getElementById('gifProgressToast');
+            const progressText = document.getElementById('gifProgressText');
+
+            // 获取书家名字
+            const cardNameEl = card.querySelector('.card-name');
+            let calligrapherName = '书法家';
+            if (cardNameEl) {
+                const nameText = cardNameEl.textContent.trim();
+                // 提取中文名字（去掉emoji图标）
+                calligrapherName = nameText.replace(/^[^\u4e00-\u9fa5]*/, '').trim() || nameText.trim();
+            }
+
+            try {
+                // 禁用按钮并显示进度
+                if (gifBtn) {
+                    gifBtn.disabled = true;
+                    gifBtn.classList.add('generating');
+                    gifBtn.innerHTML = '<span>⏳</span>';
+                }
+
+                // 显示进度提示
+                progressToast.classList.add('show');
+                progressText.textContent = '正在加载图片...';
+
+                // 等待所有图片加载完成
+                const loadedImages = await waitForImagesLoad(images);
+
+                // 更新进度
+                progressText.textContent = `正在生成GIF动图（${loadedImages.length}张）...`;
+
+                // 准备图片数据
+                const imageUrls = loadedImages.map(img => img.data);
+
+                // 生成GIF
+                const gifResult = await createGif(imageUrls, calligrapherName);
+
+                // 下载GIF
+                downloadGif(gifResult, calligrapherName);
+
+                // 更新进度
+                progressText.textContent = '✅ GIF生成完成！';
+
+                setTimeout(() => {
+                    progressToast.classList.remove('show');
+                }, 2000);
+
+            } catch (error) {
+                console.error('GIF生成失败:', error);
+                progressText.textContent = '❌ GIF生成失败';
+
+                setTimeout(() => {
+                    progressToast.classList.remove('show');
+                }, 2000);
+
+                alert('GIF生成失败：' + error.message);
+            } finally {
+                // 恢复按钮状态
+                if (gifBtn) {
+                    gifBtn.disabled = false;
+                    gifBtn.classList.remove('generating');
+                    gifBtn.innerHTML = '<span>GIF</span>';
+                }
+            }
+        }
+
+        /**
+         * 等待所有图片加载完成
+         * @param {Array} images 图片数组
+         * @returns {Promise<Array>} 加载完成的图片数组
+         */
+        function waitForImagesLoad(images) {
+            return new Promise((resolve, reject) => {
+                const loadedImages = [];
+                let loadedCount = 0;
+                let hasError = false;
+
+                images.forEach((imageData, index) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+
+                    img.onload = () => {
+                        loadedImages.push({
+                            data: imageData.data,
+                            element: img,
+                            width: img.width,
+                            height: img.height
+                        });
+                        loadedCount++;
+
+                        if (loadedCount === images.length) {
+                            if (!hasError) {
+                                resolve(loadedImages);
+                            }
+                        }
+                    };
+
+                    img.onerror = () => {
+                        console.error(`图片 ${index + 1} 加载失败`);
+                        hasError = true;
+                        reject(new Error(`第 ${index + 1} 张图片加载失败`));
+                    };
+
+                    img.src = imageData.data;
+                });
+
+                // 如果没有图片，直接返回空数组
+                if (images.length === 0) {
+                    resolve([]);
+                }
+            });
+        }
+
+        /**
+         * 创建GIF动图
+         * @param {Array} imageUrls 图片URL数组
+         * @param {string} name 书家名字
+         * @returns {Promise<Object>} GIF结果对象
+         */
+        function createGif(imageUrls, name) {
+            return new Promise((resolve, reject) => {
+                try {
+                    gifshot.createGIF({
+                        images: imageUrls,
+                        gifWidth: 400,
+                        gifHeight: 300,
+                        interval: 0.5,  // 每帧间隔时间（秒）
+                        numFrames: imageUrls.length,
+                        frameDuration: 1,  // 每帧持续时间（秒）
+                        fontWeight: 'normal',
+                        fontSize: '16px',
+                        fontFamily: 'sans-serif',
+                        fontColor: '#ffffff',
+                        textAlign: 'center',
+                        textBaseline: 'bottom',
+                        sampleInterval: 10,  // 像素采样间隔
+                        numWorkers: 2,  // Web Worker数量
+                        progressCallback: (captureProgress) => {
+                            // 更新进度提示
+                            const progressText = document.getElementById('gifProgressText');
+                            if (progressText) {
+                                const percent = Math.round(captureProgress * 100);
+                                progressText.textContent = `正在生成GIF... ${percent}%`;
+                            }
+                        }
+                    }, function (obj) {
+                        if (!obj || !obj.image) {
+                            reject(new Error('GIF生成失败'));
+                            return;
+                        }
+                        resolve(obj);
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        /**
+         * 下载GIF文件
+         * @param {Object} gifResult GIF结果对象
+         * @param {string} name 书家名字
+         */
+        function downloadGif(gifResult, name) {
+            const image = gifResult.image;
+            const fileName = `书家-${name}.gif`;
+
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = fileName;
+            link.style.display = 'none';
+
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log(`GIF已下载: ${fileName}`);
+        }
+
+        // ==================== localStorage管理 ====================
+
+        /**
+         * 从localStorage获取所有图片数据
+         * @returns {Object} 图片数据对象 {cardId: [{data, timestamp, originalSize, compressedSize}]}
+         */
+        function getStoredImages() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                console.error('读取存储数据失败:', e);
+                return {};
+            }
+        }
+
+        /**
+         * 保存图片数据到localStorage
+         * @param {Object} imagesData 图片数据对象
+         */
+        function saveStoredImages(imagesData) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(imagesData));
+                updateStorageInfo();
+            } catch (e) {
+                console.error('保存数据失败:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('存储空间已满！请清理旧图片以释放空间。');
+                }
+            }
+        }
+
+        /**
+         * 删除指定卡片的所有图片
+         * @param {string} cardId 卡片ID
+         */
+        function deleteCardImage(cardId) {
+            const imagesData = getStoredImages();
+            delete imagesData[cardId];
+            saveStoredImages(imagesData);
+        }
+
+        /**
+         * 删除指定卡片的指定图片
+         * @param {string} cardId 卡片ID
+         * @param {number} imageIndex 图片索引
+         */
+        function deleteCardSingleImage(cardId, imageIndex) {
+            const imagesData = getStoredImages();
+            if (imagesData[cardId] && imagesData[cardId].images) {
+                imagesData[cardId].images.splice(imageIndex, 1);
+                if (imagesData[cardId].images.length === 0) {
+                    delete imagesData[cardId];
+                }
+                saveStoredImages(imagesData);
+            }
+        }
+
+        /**
+         * 清理所有旧图片（保留最新的N张）
+         */
+        function clearOldImages() {
+            const imagesData = getStoredImages();
+            const imageList = [];
+
+            // 收集所有图片
+            Object.entries(imagesData).forEach(([cardId, cardData]) => {
+                if (cardData.images && Array.isArray(cardData.images)) {
+                    cardData.images.forEach((imgData, index) => {
+                        imageList.push({
+                            cardId,
+                            index,
+                            timestamp: imgData.timestamp || 0
+                        });
+                    });
+                } else if (cardData.data) {
+                    // 兼容旧的单图格式
+                    imageList.push({
+                        cardId,
+                        index: -1,
+                        timestamp: cardData.timestamp || 0
+                    });
+                }
+            });
+
+            // 按时间戳排序（最新的在前）
+            imageList.sort((a, b) => b.timestamp - a.timestamp);
+
+            // 询问用户要保留多少张
+            const keepCount = prompt(`当前共有 ${imageList.length} 张图片。\n请输入要保留的图片数量（最新的几张）：`, '100');
+            const keepNum = parseInt(keepCount);
+
+            if (isNaN(keepNum) || keepNum < 0) {
+                alert('请输入有效的数字！');
+                return;
+            }
+
+            if (keepNum >= imageList.length) {
+                alert('图片数量未超过保留数量，无需清理。');
+                return;
+            }
+
+            // 删除旧的图片
+            const toDelete = imageList.slice(keepNum);
+            let deletedCount = 0;
+
+            toDelete.forEach(({ cardId, index }) => {
+                if (index === -1) {
+                    // 旧格式，删除整个卡片
+                    delete imagesData[cardId];
+                } else {
+                    // 新格式，删除指定图片
+                    if (imagesData[cardId] && imagesData[cardId].images) {
+                        imagesData[cardId].images.splice(index, 1);
+                        if (imagesData[cardId].images.length === 0) {
+                            delete imagesData[cardId];
+                        }
+                    }
+                }
+                deletedCount++;
+            });
+
+            saveStoredImages(imagesData);
+
+            // 重新加载所有卡片
+            reloadAllCards();
+
+            alert(`已清理 ${deletedCount} 张旧图片！\n保留最新 ${keepNum} 张图片。`);
+        }
+
+        /**
+         * 清空所有图片
+         */
+        function clearAllImages() {
+            if (confirm('确定要清空所有图片吗？此操作不可恢复！')) {
+                localStorage.removeItem(STORAGE_KEY);
+
+                // 恢复所有卡片为默认图片
+                cards.forEach(card => {
+                    const img = card.querySelector('.card-image img');
+                    const placeholder = card.querySelector('.card-placeholder');
+                    const hint = card.querySelector('.select-hint');
+
+                    if (img) {
+                        const defaultSrc = img.getAttribute('data-default-src');
+                        if (defaultSrc) {
+                            img.src = defaultSrc;
+                        }
+                    }
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                    if (hint) {
+                        hint.textContent = '👆 点击选中';
+                    }
+                });
+
+                updateStorageInfo();
+                alert('已清空所有图片！');
+            }
+        }
+
+        /**
+         * 更新存储信息显示
+         */
+        function updateStorageInfo() {
+            const imagesData = getStoredImages();
+            let count = 0;
+
+            // 计算总图片数
+            Object.values(imagesData).forEach(cardData => {
+                if (cardData.images && Array.isArray(cardData.images)) {
+                    count += cardData.images.length;
+                } else if (cardData.data) {
+                    // 兼容旧的单图格式
+                    count += 1;
+                }
+            });
+
+            storageCount.textContent = `已存储 ${count} 张图片`;
+
+            // 根据数量设置警告样式
+            storageInfo.classList.remove('warning', 'error');
+            if (count >= MAX_IMAGES) {
+                storageInfo.classList.add('error');
+                storageCount.textContent = `⚠️ 已存储 ${count} 张图片（已达上限！）`;
+            } else if (count >= MAX_IMAGES * 0.8) {
+                storageInfo.classList.add('warning');
+                storageCount.textContent = `⚠️ 已存储 ${count} 张图片（接近上限）`;
+            }
+        }
+
+        // ==================== 图片压缩功能 ====================
+
+        /**
+         * 压缩图片
+         * @param {File} file 原始图片文件
+         * @param {number} maxWidth 最大宽度
+         * @param {number} quality 压缩质量（0-1）
+         * @returns {Promise<string>} 压缩后的Base64字符串
+         */
+        function compressImage(file, maxWidth, quality) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const img = new Image();
+
+                    img.onload = () => {
+                        // 创建canvas进行压缩
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 计算新尺寸（保持比例）
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        // 绘制并压缩
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // 转换为Base64
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedDataUrl);
+                    };
+
+                    img.onerror = () => reject(new Error('图片加载失败'));
+                    img.src = e.target.result;
+                };
+
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ==================== 页面初始化 ====================
+
+        /**
+         * 页面加载时恢复保存的图片
+         */
+        function loadSavedImages() {
+            reloadAllCards();
+        }
+
+        // ==================== 卡片选择功能 ====================
+
+        // 为每个卡片添加点击事件监听器
+        cards.forEach(card => {
+            card.addEventListener('click', function(e) {
+                // 编辑模式下禁止卡片选择
+                if (isEditMode) {
+                    return;
+                }
+
+                // 防止点击卡片内部元素时触发
+                if (e.target !== this && !this.contains(e.target)) {
+                    return;
+                }
+
+                // 移除之前选中卡片的选中状态
+                if (selectedCard) {
+                    selectedCard.classList.remove('selected');
+                    const oldHint = selectedCard.querySelector('.select-hint');
+                    if (oldHint) oldHint.textContent = '👆 点击选中';
+                }
+
+                // 如果点击的是已选中的卡片，则取消选中
+                if (selectedCard === this) {
+                    selectedCard = null;
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<span>📷</span> 选择照片（支持多选，先点击卡片）';
+                    return;
+                }
+
+                // 选中新卡片
+                selectedCard = this;
+                this.classList.add('selected');
+                const newHint = this.querySelector('.select-hint');
+                if (newHint) newHint.textContent = '✅ 已选中';
+
+                // 启用上传按钮
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<span>📷</span> 添加照片（支持多选）';
+            });
+        });
+
+        // ==================== 照片上传功能 ====================
+
+        // 点击上传按钮时触发文件选择对话框
+        uploadBtn.addEventListener('click', function() {
+            if (selectedCard) {
+                fileInput.click();  // 触发文件选择对话框
+            }
+        });
+
+        // 清理按钮事件
+        clearBtn.addEventListener('click', function() {
+            const imagesData = getStoredImages();
+            const count = Object.keys(imagesData).length;
+
+            if (count === 0) {
+                alert('当前没有存储的图片。');
+                return;
+            }
+
+            const choice = confirm(
+                `当前共有 ${count} 张图片。\n\n` +
+                `点击"确定"：清理旧图片（保留最新的几张）\n` +
+                `点击"取消"：清空所有图片\n\n` +
+                `建议：当图片超过1000张时，请及时清理。`
+            );
+
+            if (choice) {
+                clearOldImages();
+            } else {
+                clearAllImages();
+            }
+        });
+
+        // 用户选择文件后的处理
+        fileInput.addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);  // 获取选择的多个文件
+
+            // 验证是否选择了文件
+            if (files.length === 0) return;
+
+            // 验证文件类型是否为图片
+            const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
+            if (invalidFiles.length > 0) {
+                alert('请仅选择图片文件！支持格式：JPG、PNG、GIF等');
+                return;
+            }
+
+            // 获取当前卡片已有的图片
+            const cardId = selectedCard.getAttribute('data-card-id');
+            const imagesData = getStoredImages();
+            const existingImages = (imagesData[cardId]?.images && Array.isArray(imagesData[cardId].images))
+                ? [...imagesData[cardId].images]
+                : (imagesData[cardId]?.data ? [imagesData[cardId]] : []);
+
+            // 检查每个卡片的图片数量限制
+            if (existingImages.length + files.length > MAX_IMAGES_PER_CARD) {
+                alert(`每个卡片最多只能上传 ${MAX_IMAGES_PER_CARD} 张图片！\n当前已有 ${existingImages.length} 张，本次选择了 ${files.length} 张。`);
+                fileInput.value = '';
+                return;
+            }
+
+            // 检查总图片数量
+            let totalCurrentCount = 0;
+            Object.values(imagesData).forEach(cardData => {
+                if (cardData.images && Array.isArray(cardData.images)) {
+                    totalCurrentCount += cardData.images.length;
+                } else if (cardData.data) {
+                    totalCurrentCount += 1;
+                }
+            });
+
+            if (totalCurrentCount + files.length > MAX_IMAGES) {
+                alert(`图片总数已达上限（${MAX_IMAGES}张）！\n当前总数：${totalCurrentCount}，本次上传：${files.length}。\n请先清理旧图片再上传。`);
+                clearBtn.click();
+                fileInput.value = '';
+                return;
+            }
+
+            // 如果接近上限，提醒用户
+            if (totalCurrentCount + files.length >= MAX_IMAGES * 0.8) {
+                const proceed = confirm(
+                    `警告：上传后将存储 ${totalCurrentCount + files.length} 张图片，接近上限！\n` +
+                    `建议先清理部分旧图片。\n\n` +
+                    `是否继续上传？`
+                );
+                if (!proceed) {
+                    fileInput.value = '';
+                    return;
+                }
+            }
+
+            try {
+                // 显示正在处理
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span>⏳</span> 正在处理图片...';
+
+                // 处理所有图片
+                const newImages = [];
+                let totalOriginalSize = 0;
+                let totalCompressedSize = 0;
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    uploadBtn.innerHTML = `<span>⏳</span> 正在处理第 ${i + 1}/${files.length} 张图片...`;
+
+                    const originalSize = file.size;
+                    totalOriginalSize += originalSize;
+
+                    // 压缩图片
+                    const compressedBase64 = await compressImage(
+                        file,
+                        COMPRESS_TARGET_WIDTH,
+                        COMPRESS_QUALITY
+                    );
+
+                    // 计算压缩后大小
+                    const compressedSize = Math.round((compressedBase64.length - 'data:image/jpeg;base64,'.length) * 3 / 4);
+                    totalCompressedSize += compressedSize;
+
+                    newImages.push({
+                        data: compressedBase64,
+                        timestamp: Date.now(),
+                        originalSize: originalSize,
+                        compressedSize: compressedSize
+                    });
+                }
+
+                const originalSizeMB = (totalOriginalSize / (1024 * 1024)).toFixed(2);
+                const compressedSizeMB = (totalCompressedSize / (1024 * 1024)).toFixed(2);
+                const compressionRatio = ((1 - totalCompressedSize / totalOriginalSize) * 100).toFixed(1);
+
+                console.log(`图片压缩完成：${originalSizeMB}MB → ${compressedSizeMB}MB（压缩${compressionRatio}%）`);
+
+                // 合并已有图片和新图片
+                const allImages = [...existingImages, ...newImages];
+
+                // 保存到localStorage
+                imagesData[cardId] = {
+                    images: allImages
+                };
+                saveStoredImages(imagesData);
+
+                // 更新卡片显示
+                createCarousel(selectedCard, allImages);
+
+                // 更新选中提示
+                const hint = selectedCard.querySelector('.select-hint');
+                if (hint) hint.textContent = `✅ 已保存 ${allImages.length} 张图片`;
+
+                // 显示压缩信息
+                alert(
+                    `成功上传 ${files.length} 张图片！\n\n` +
+                    `原始大小：${originalSizeMB}MB\n` +
+                    `压缩后：${compressedSizeMB}MB\n` +
+                    `压缩率：${compressionRatio}%\n\n` +
+                    `该卡片当前共有 ${allImages.length} 张图片。\n` +
+                    `图片已自动保存，下次打开页面时依然存在。`
+                );
+
+            } catch (error) {
+                console.error('图片处理失败:', error);
+                alert('图片处理失败：' + error.message);
+            } finally {
+                // 恢复按钮状态
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<span>📷</span> 添加照片（支持多选）';
+                // 清空文件输入框，允许重复选择同一文件
+                fileInput.value = '';
+            }
+        });
+
+        // ==================== 页面加载完成 ====================
+
+        // 页面加载时恢复保存的图片
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSavedImages();
+            loadSavedCardInfo();
+            initEditButton();
+        });
+    </script>
+</body>
+</html>
