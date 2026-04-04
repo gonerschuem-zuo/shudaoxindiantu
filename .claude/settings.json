@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" repo view gonerschuem-zuo/shudaoxindiantu)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" repo list gonerschuem-zuo)",
+      "Bash(curl -X PATCH -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.github.com/repos/gonerschuem-zuo/- -d '{\"name\":\"shudaoxindiantu\"}')",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" auth token)",
+      "Bash(curl -X PATCH -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: Bearer __TRACKED_VAR__' https://api.github.com/repos/gonerschuem-zuo/- -d '{\"name\":\"shudaoxindiantu\"}')"
+    ]
+  }
+}
