@@ -1312,11 +1312,10 @@
         const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
         // ==================== Cloudinary 配置 ====================
-        // TODO: 请在 CLOUDINARY_SETUP.md 中获取你的密钥，然后填入下方
         const CLOUDINARY_CONFIG = {
-            cloudName: 'demo',  // 替换为你的 Cloud name
-            uploadPreset: 'unsigned_preset',  // 替换为你的 Upload preset name
-            folder: 'calligraphy',  // 可选：文件夹名称
+            cloudName: 'calligraphy_mojian',  // Cloud name
+            uploadPreset: 'calligraphy_upload',  // Upload preset name
+            folder: 'calligraphy',  // 文件夹名称
             // 从 Cloudinary 获取图片的 API 端点
             searchUrl: (cloudName, tag) =>
                 `https://res.cloudinary.com/${cloudName}/image/list/${tag}.json`
