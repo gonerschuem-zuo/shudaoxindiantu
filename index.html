@@ -4,20 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>书道心电图 - 书法卡片展示</title>
-    <!-- Supabase SDK - 使用备用 CDN -->
+    <!-- Supabase SDK - 多CDN备份方案 -->
     <script>
-        // 安全加载 Supabase SDK，避免 CDN 被阻止
         (function() {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@supabase/supabase-js@2';
-            script.async = false;
-            script.onload = function() {
-                console.log('✅ Supabase SDK 加载成功');
-            };
-            script.onerror = function() {
-                console.warn('⚠️ Supabase SDK 加载失败，使用本地存储');
-            };
-            document.head.appendChild(script);
+            // CDN列表（按优先级）
+            const cdns = [
+                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+                'https://unpkg.com/@supabase/supabase-js@2',
+                'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2/latest/supabase.min.js'
+            ];
+
+            let currentCdn = 0;
+
+            function loadNextCdn() {
+                if (currentCdn >= cdns.length) {
+                    console.warn('⚠️ 所有 CDN 都加载失败，使用 REST API 模式');
+                    window.supabaseUseRestApi = true;
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = cdns[currentCdn];
+                script.async = false;
+                script.onload = function() {
+                    console.log('✅ Supabase SDK 加载成功 (CDN ' + (currentCdn + 1) + ')');
+                };
+                script.onerror = function() {
+                    console.warn('⚠️ CDN ' + (currentCdn + 1) + ' 失败，尝试下一个...');
+                    currentCdn++;
+                    loadNextCdn();
+                };
+                document.head.appendChild(script);
+            }
+
+            loadNextCdn();
         })();
     </script>
     <!-- Cloudinary SDK -->
@@ -1347,6 +1367,7 @@
         // ==================== Supabase 客户端（安全初始化）====================
         let supabase = null;
         let useSupabase = false;
+        let useRestApi = false;  // 是否使用 REST API 模式
 
         /**
          * 检查 Supabase 是否可用
@@ -1356,11 +1377,121 @@
         }
 
         /**
+         * 上传文件到 Supabase (使用 REST API)
+         * @param {File} file 文件
+         * @param {string} path 文件路径
+         * @returns {Promise<Object>}
+         */
+        async function uploadToSupabaseRest(file, path) {
+            const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${path}`;
+            const headers = {
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': file.type || 'image/jpeg'
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: file
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || '上传失败');
+            }
+
+            // 获取公开 URL
+            const publicUrl = `${SUPABASE_CONFIG.url}/storage/v1/object/public/${path}`;
+
+            return {
+                path: path,
+                url: publicUrl,
+                isCloud: true
+            };
+        }
+
+        /**
+         * 从 Supabase 列出文件 (使用 REST API)
+         * @returns {Promise<Object>}
+         */
+        async function listFromSupabaseRest() {
+            const url = `${SUPABASE_CONFIG.url}/storage/v1/object/list/${SUPABASE_CONFIG.bucketName}`;
+            const headers = {
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    prefix: '',
+                    limit: 1000
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('获取文件列表失败');
+            }
+
+            const data = await response.json();
+
+            // 按卡片ID分组
+            const result = {};
+            data.forEach(file => {
+                if (file.name === '.emptyFolderPlaceholder') return;
+
+                const match = file.name.match(/^(\d+)\//);
+                if (match) {
+                    const cardId = match[1];
+                    const publicUrl = `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.bucketName}/${file.name}`;
+
+                    if (!result[cardId]) result[cardId] = [];
+                    result[cardId].push({
+                        url: publicUrl,
+                        path: file.name,
+                        timestamp: new Date(file.created_at).getTime(),
+                        isCloud: true
+                    });
+                }
+            });
+
+            return result;
+        }
+
+        /**
+         * 从 Supabase 删除文件 (使用 REST API)
+         * @param {string} path 文件路径
+         */
+        async function deleteFromSupabaseRest(path) {
+            const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.bucketName}/${path}`;
+            const headers = {
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            };
+
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: headers
+            });
+
+            if (!response.ok) {
+                throw new Error('删除失败');
+            }
+        }
+
+        /**
          * 安全初始化 Supabase
          * 如果失败不会影响其他功能
          */
         function safeInitSupabase() {
             try {
+                // 检查是否使用 REST API 模式
+                if (window.supabaseUseRestApi) {
+                    useRestApi = true;
+                    useSupabase = true;
+                    console.log('✅ 使用 REST API 模式');
+                    return;
+                }
+
                 // 检查 SDK 是否加载（等待最多 3 秒）
                 let attempts = 0;
                 const maxAttempts = 30; // 3 秒
@@ -1380,12 +1511,13 @@
                         // 测试连接
                         if (supabase && supabase.storage) {
                             useSupabase = true;
-                            console.log('✅ Supabase 初始化成功');
+                            console.log('✅ Supabase SDK 初始化成功');
                         }
                     } else if (attempts >= maxAttempts) {
                         clearInterval(checkSupabase);
-                        console.warn('⚠️ Supabase SDK 加载超时，使用本地存储');
-                        useSupabase = false;
+                        console.warn('⚠️ Supabase SDK 加载超时，切换到 REST API 模式');
+                        useRestApi = true;
+                        useSupabase = true;
                     }
                 }, 100);
 
@@ -1402,27 +1534,34 @@
          * @returns {Promise<Object|null>}
          */
         async function safeUploadToSupabase(file, cardId) {
-            if (!useSupabase || !supabase) return null;
+            if (!useSupabase) return null;
 
             try {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${cardId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                const filePath = `${SUPABASE_CONFIG.bucketName}/${fileName}`;
 
-                const { data, error } = await supabase.storage
-                    .from(SUPABASE_CONFIG.bucketName)
-                    .upload(fileName, file);
+                if (useRestApi) {
+                    // 使用 REST API
+                    return await uploadToSupabaseRest(file, filePath);
+                } else {
+                    // 使用 SDK
+                    const { data, error } = await supabase.storage
+                        .from(SUPABASE_CONFIG.bucketName)
+                        .upload(fileName, file);
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                const { data: { publicUrl } } = supabase.storage
-                    .from(SUPABASE_CONFIG.bucketName)
-                    .getPublicUrl(fileName);
+                    const { data: { publicUrl } } = supabase.storage
+                        .from(SUPABASE_CONFIG.bucketName)
+                        .getPublicUrl(fileName);
 
-                return {
-                    path: data.path,
-                    url: publicUrl,
-                    isCloud: true
-                };
+                    return {
+                        path: data.path,
+                        url: publicUrl,
+                        isCloud: true
+                    };
+                }
             } catch (error) {
                 console.warn('⚠️ Supabase 上传失败:', error.message);
                 return null;
@@ -1434,37 +1573,43 @@
          * @returns {Promise<Object>}
          */
         async function safeLoadFromSupabase() {
-            if (!useSupabase || !supabase) return {};
+            if (!useSupabase) return {};
 
             try {
-                const { data, error } = await supabase.storage
-                    .from(SUPABASE_CONFIG.bucketName)
-                    .list('');
+                if (useRestApi) {
+                    // 使用 REST API
+                    return await listFromSupabaseRest();
+                } else {
+                    // 使用 SDK
+                    const { data, error } = await supabase.storage
+                        .from(SUPABASE_CONFIG.bucketName)
+                        .list('');
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                const result = {};
-                data.forEach(file => {
-                    if (file.name === '.emptyFolderPlaceholder') return;
+                    const result = {};
+                    data.forEach(file => {
+                        if (file.name === '.emptyFolderPlaceholder') return;
 
-                    const match = file.name.match(/^(\d+)\//);
-                    if (match) {
-                        const cardId = match[1];
-                        const { data: { publicUrl } } = supabase.storage
-                            .from(SUPABASE_CONFIG.bucketName)
-                            .getPublicUrl(file.name);
+                        const match = file.name.match(/^(\d+)\//);
+                        if (match) {
+                            const cardId = match[1];
+                            const { data: { publicUrl } } = supabase.storage
+                                .from(SUPABASE_CONFIG.bucketName)
+                                .getPublicUrl(file.name);
 
-                        if (!result[cardId]) result[cardId] = [];
-                        result[cardId].push({
-                            url: publicUrl,
-                            path: file.name,
-                            timestamp: new Date(file.created_at).getTime(),
-                            isCloud: true
-                        });
-                    }
-                });
+                            if (!result[cardId]) result[cardId] = [];
+                            result[cardId].push({
+                                url: publicUrl,
+                                path: file.name,
+                                timestamp: new Date(file.created_at).getTime(),
+                                isCloud: true
+                            });
+                        }
+                    });
 
-                return result;
+                    return result;
+                }
             } catch (error) {
                 console.warn('⚠️ 从 Supabase 加载失败:', error.message);
                 return {};
@@ -1476,14 +1621,20 @@
          * @param {string} path 文件路径
          */
         async function safeDeleteFromSupabase(path) {
-            if (!useSupabase || !supabase || !path) return;
+            if (!useSupabase || !path) return;
 
             try {
-                const { error } = await supabase.storage
-                    .from(SUPABASE_CONFIG.bucketName)
-                    .remove([path]);
+                if (useRestApi) {
+                    // 使用 REST API
+                    await deleteFromSupabaseRest(path);
+                } else {
+                    // 使用 SDK
+                    const { error } = await supabase.storage
+                        .from(SUPABASE_CONFIG.bucketName)
+                        .remove([path]);
 
-                if (error) throw error;
+                    if (error) throw error;
+                }
                 console.log('✅ 已从 Supabase 删除');
             } catch (error) {
                 console.warn('⚠️ 从 Supabase 删除失败:', error.message);
