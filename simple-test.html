@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速测试 Cloudinary</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .box { background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Cloudinary 快速测试</h1>
+
+    <div class="box">
+        <h3>配置信息</h3>
+        <label>Cloud Name:</label>
+        <input type="text" id="cloudName" value="calligraphy_mojian">
+        <label>Upload Preset:</label>
+        <input type="text" id="uploadPreset" value="calligraphy_mojian">
+    </div>
+
+    <div class="box">
+        <h3>测试上传</h3>
+        <input type="file" id="file" accept="image/*">
+        <br><br>
+        <button onclick="testUpload()">📤 上传测试</button>
+        <div id="result"></div>
+    </div>
+
+    <div class="box">
+        <h3>💡 如果测试失败</h3>
+        <p>请检查 Cloudinary 中的 Upload Preset 设置：</p>
+        <ol>
+            <li>访问 <a href="https://cloudinary.com/console" target="_blank">Cloudinary Console</a></li>
+            <li>点击 Settings → Upload</li>
+            <li>找到名为 <strong>calligraphy_mojian</strong> 的 preset</li>
+            <li>确认 <strong>Signing mode</strong> 是 <strong>Unsigned</strong></li>
+        </ol>
+    </div>
+
+    <script>
+        async function testUpload() {
+            const cloudName = document.getElementById('cloudName').value;
+            const preset = document.getElementById('uploadPreset').value;
+            const file = document.getElementById('file').files[0];
+            const resultDiv = document.getElementById('result');
+
+            if (!file) {
+                resultDiv.innerHTML = '<div class="result error">请选择一张图片</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="result">正在上传...</div>';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', preset);
+            formData.append('tags', 'test');
+
+            const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+            try {
+                const response = await fetch(url, { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ 上传成功！<br>
+                            URL: <a href="${data.secure_url}" target="_blank">${data.secure_url}</a><br>
+                            <img src="${data.secure_url}" style="max-width: 200px; margin-top: 10px;">
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ 上传失败<br>
+                            <strong>错误信息：</strong><br>
+                            ${JSON.stringify(data, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 网络错误: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
