@@ -1329,9 +1329,11 @@
         async function uploadToSupabase(file, cardId) {
             const fileExt = file.name.split('.').pop();
             const fileName = `${cardId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-            const path = `${SUPABASE_BUCKET}/${fileName}`;
 
-            const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${path}`, {
+            // 上传路径：bucket_name/file_name
+            const uploadPath = `${SUPABASE_BUCKET}/${fileName}`;
+
+            const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${uploadPath}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
@@ -1345,10 +1347,11 @@
                 throw new Error(error.message || '上传失败');
             }
 
-            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`;
+            // 公开 URL：需要包含 bucket 名称
+            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${fileName}`;
 
             return {
-                path: path,
+                path: uploadPath,
                 url: publicUrl
             };
         }
@@ -3186,13 +3189,13 @@
                         const match = file.name.match(/^(\d+)\//);
                         if (match) {
                             const cardId = match[1];
-                            const path = `${SUPABASE_BUCKET}/${file.name}`;
-                            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`;
+                            // 公开 URL 格式：/storage/v1/object/public/bucket_name/file_name
+                            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${file.name}`;
 
                             if (!cloudImages[cardId]) cloudImages[cardId] = [];
                             cloudImages[cardId].push({
                                 url: publicUrl,
-                                path: path,
+                                path: `${SUPABASE_BUCKET}/${file.name}`,
                                 timestamp: new Date(file.created_at).getTime(),
                                 isCloud: true
                             });
