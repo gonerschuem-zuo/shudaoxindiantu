@@ -1969,14 +1969,23 @@
          * @param {number} imageIndex 图片索引
          */
         async function deleteCardImage(card, imageIndex) {
+            console.log('=== deleteCardImage 开始 ===');
+            console.log('card:', card);
+            console.log('imageIndex:', imageIndex);
+
             const cardId = card.getAttribute('data-card-id');
+            console.log('cardId:', cardId);
+
             const imagesData = getStoredImages();
+            console.log('imagesData:', imagesData);
 
             // 获取当前卡片的图片
             let currentImages = [];
             if (imagesData[cardId] && imagesData[cardId].images) {
                 currentImages = [...imagesData[cardId].images];
             }
+            console.log('currentImages:', currentImages);
+            console.log('currentImages.length:', currentImages.length);
 
             // 检查索引是否有效
             if (imageIndex < 0 || imageIndex >= currentImages.length) {
@@ -1985,6 +1994,7 @@
             }
 
             const imageToDelete = currentImages[imageIndex];
+            console.log('imageToDelete:', imageToDelete);
 
             // 如果是云端图片，从 Supabase 删除
             if (imageToDelete.isCloud && imageToDelete.path && useSupabase) {
@@ -1998,6 +2008,7 @@
 
             // 删除指定图片
             currentImages.splice(imageIndex, 1);
+            console.log('删除后 currentImages:', currentImages);
 
             // 更新localStorage
             if (currentImages.length > 0) {
@@ -2007,9 +2018,11 @@
                 delete imagesData[cardId];
             }
             saveStoredImages(imagesData);
+            console.log('已保存到 localStorage');
 
             // 更新卡片显示
             createCarousel(card, currentImages);
+            console.log('已更新轮播图');
 
             // 更新选中提示
             const hint = card.querySelector('.select-hint');
@@ -2021,17 +2034,8 @@
                 }
             }
 
-            // 显示删除成功提示
-            const remainingCount = currentImages.length;
-            if (remainingCount > 0) {
-                // 延迟一下再恢复提示文字
-                setTimeout(() => {
-                    const currentHint = card.querySelector('.select-hint');
-                    if (currentHint && currentHint.textContent.includes('已保存')) {
-                        currentHint.textContent = '👆 点击选中';
-                    }
-                }, 1500);
-            }
+            console.log('=== deleteCardImage 完成 ===');
+            alert(`删除成功！剩余 ${currentImages.length} 张图片`);
         }
 
         // ==================== GIF导出功能 ====================
