@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>书道心电图 - 书法卡片展示</title>
+    <!-- Supabase SDK (本地文件，避免 CDN 被阻止) -->
+    <script src="js/supabase.js"></script>
     <!-- Cloudinary SDK -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
@@ -1321,6 +1323,143 @@
         const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
         const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
+        // ==================== Supabase 配置 ====================
+        const SUPABASE_CONFIG = {
+            url: 'https://ntxmkxakpbrnuosjahhr.supabase.co',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG1reGFrcGJybnVvc2phaGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDIyMDUsImV4cCI6MjA5MTAxODIwNX0.uvXyOpuiMiNup4ErBkCu5WJr2M3f9Xr5flMWCPQswTg',
+            bucketName: 'calligraphy-images'
+        };
+
+        // ==================== Supabase 客户端（安全初始化）====================
+        let supabase = null;
+        let useSupabase = false;
+
+        /**
+         * 安全初始化 Supabase
+         * 如果失败不会影响其他功能
+         */
+        function safeInitSupabase() {
+            try {
+                // 检查 SDK 是否加载
+                if (typeof window.supabase === 'undefined') {
+                    console.warn('⚠️ Supabase SDK 未加载，使用本地存储');
+                    return false;
+                }
+
+                // 创建客户端
+                supabase = window.supabase.createClient(
+                    SUPABASE_CONFIG.url,
+                    SUPABASE_CONFIG.anonKey
+                );
+
+                // 测试连接
+                if (supabase && supabase.storage) {
+                    useSupabase = true;
+                    console.log('✅ Supabase 初始化成功');
+                    return true;
+                }
+            } catch (error) {
+                console.warn('⚠️ Supabase 初始化失败:', error.message);
+            }
+            useSupabase = false;
+            return false;
+        }
+
+        /**
+         * 安全上传到 Supabase
+         * @param {File} file 文件
+         * @param {string} cardId 卡片ID
+         * @returns {Promise<Object|null>}
+         */
+        async function safeUploadToSupabase(file, cardId) {
+            if (!useSupabase || !supabase) return null;
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${cardId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+                const { data, error } = await supabase.storage
+                    .from(SUPABASE_CONFIG.bucketName)
+                    .upload(fileName, file);
+
+                if (error) throw error;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from(SUPABASE_CONFIG.bucketName)
+                    .getPublicUrl(fileName);
+
+                return {
+                    path: data.path,
+                    url: publicUrl,
+                    isCloud: true
+                };
+            } catch (error) {
+                console.warn('⚠️ Supabase 上传失败:', error.message);
+                return null;
+            }
+        }
+
+        /**
+         * 安全从 Supabase 加载图片
+         * @returns {Promise<Object>}
+         */
+        async function safeLoadFromSupabase() {
+            if (!useSupabase || !supabase) return {};
+
+            try {
+                const { data, error } = await supabase.storage
+                    .from(SUPABASE_CONFIG.bucketName)
+                    .list('');
+
+                if (error) throw error;
+
+                const result = {};
+                data.forEach(file => {
+                    if (file.name === '.emptyFolderPlaceholder') return;
+
+                    const match = file.name.match(/^(\d+)\//);
+                    if (match) {
+                        const cardId = match[1];
+                        const { data: { publicUrl } } = supabase.storage
+                            .from(SUPABASE_CONFIG.bucketName)
+                            .getPublicUrl(file.name);
+
+                        if (!result[cardId]) result[cardId] = [];
+                        result[cardId].push({
+                            url: publicUrl,
+                            path: file.name,
+                            timestamp: new Date(file.created_at).getTime(),
+                            isCloud: true
+                        });
+                    }
+                });
+
+                return result;
+            } catch (error) {
+                console.warn('⚠️ 从 Supabase 加载失败:', error.message);
+                return {};
+            }
+        }
+
+        /**
+         * 安全从 Supabase 删除
+         * @param {string} path 文件路径
+         */
+        async function safeDeleteFromSupabase(path) {
+            if (!useSupabase || !supabase || !path) return;
+
+            try {
+                const { error } = await supabase.storage
+                    .from(SUPABASE_CONFIG.bucketName)
+                    .remove([path]);
+
+                if (error) throw error;
+                console.log('✅ 已从 Supabase 删除');
+            } catch (error) {
+                console.warn('⚠️ 从 Supabase 删除失败:', error.message);
+            }
+        }
+
         // ==================== 简化版配置：本地存储模式 ====================
         // 图片存储在浏览器本地，同一设备上共享
         // 如需多设备共享，可以导出/导入数据
@@ -1884,7 +2023,7 @@
          * @param {HTMLElement} card 卡片元素
          * @param {number} imageIndex 图片索引
          */
-        function deleteCardImage(card, imageIndex) {
+        async function deleteCardImage(card, imageIndex) {
             const cardId = card.getAttribute('data-card-id');
             const imagesData = getStoredImages();
 
@@ -1898,6 +2037,13 @@
             if (imageIndex < 0 || imageIndex >= currentImages.length) {
                 alert('无效的图片索引！');
                 return;
+            }
+
+            const imageToDelete = currentImages[imageIndex];
+
+            // 如果是云端图片，从 Supabase 删除
+            if (imageToDelete.isCloud && imageToDelete.path) {
+                await safeDeleteFromSupabase(imageToDelete.path);
             }
 
             // 删除指定图片
@@ -1933,6 +2079,10 @@
                     const currentHint = card.querySelector('.select-hint');
                     if (currentHint && currentHint.textContent.includes('已保存')) {
                         currentHint.textContent = '👆 点击选中';
+                    }
+                }, 1500);
+            }
+        }
                     }
                 }, 1500);
             }
@@ -2957,7 +3107,7 @@
             }
         });
 
-        // ==================== 图片上传处理（简化版）====================
+        // ==================== 图片上传处理（支持云端和本地）====================
         // 用户选择文件后的处理
         fileInput.addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);  // 获取选择的多个文件
@@ -2993,27 +3143,38 @@
 
                 // 处理所有图片
                 const newImages = [];
+                let cloudSuccessCount = 0;
+
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     uploadBtn.innerHTML = `<span>⏳</span> 正在处理第 ${i + 1}/${files.length} 张图片...`;
 
-                    // 压缩图片
-                    const compressedBase64 = await compressImage(
-                        file,
-                        COMPRESS_TARGET_WIDTH,
-                        COMPRESS_QUALITY
-                    );
+                    let imageData;
 
-                    newImages.push({
-                        data: compressedBase64,
-                        timestamp: Date.now()
-                    });
+                    // 尝试上传到 Supabase
+                    if (useSupabase) {
+                        const cloudResult = await safeUploadToSupabase(file, cardId);
+                        if (cloudResult) {
+                            imageData = cloudResult;
+                            cloudSuccessCount++;
+                        } else {
+                            // 降级到本地存储
+                            const compressedBase64 = await compressImage(file, COMPRESS_TARGET_WIDTH, COMPRESS_QUALITY);
+                            imageData = { data: compressedBase64, timestamp: Date.now(), isCloud: false };
+                        }
+                    } else {
+                        // 直接使用本地存储
+                        const compressedBase64 = await compressImage(file, COMPRESS_TARGET_WIDTH, COMPRESS_QUALITY);
+                        imageData = { data: compressedBase64, timestamp: Date.now(), isCloud: false };
+                    }
+
+                    newImages.push(imageData);
                 }
 
                 // 合并已有图片和新图片
                 const allImages = [...existingImages, ...newImages];
 
-                // 保存到localStorage
+                // 保存到localStorage（作为缓存）
                 imagesData[cardId] = { images: allImages };
                 saveStoredImages(imagesData);
 
@@ -3025,11 +3186,13 @@
                 if (hint) hint.textContent = `✅ 已保存 ${allImages.length} 张图片`;
 
                 // 显示成功提示
+                const storageType = cloudSuccessCount > 0 ? '云端' : '本地';
+                const shareHint = cloudSuccessCount > 0 ? '\n其他用户也可以看到！' : '\n刷新页面后依然存在。';
                 alert(
                     `✅ 上传成功！\n\n` +
                     `共上传 ${files.length} 张图片。\n` +
                     `该卡片当前共有 ${allImages.length} 张图片。\n\n` +
-                    `图片已保存，刷新页面后依然存在。`
+                    `图片已保存到${storageType}${shareHint}`
                 );
 
             } catch (error) {
@@ -3059,7 +3222,43 @@
         // ==================== 页面加载完成 ====================
 
         // 页面加载时恢复保存的图片
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
+            // 安全初始化 Supabase
+            safeInitSupabase();
+
+            // 尝试从 Supabase 加载图片
+            if (useSupabase) {
+                try {
+                    const cloudImages = await safeLoadFromSupabase();
+                    if (Object.keys(cloudImages).length > 0) {
+                        // 合并云端图片和本地缓存
+                        const localImages = getStoredImages();
+                        const mergedImages = { ...localImages };
+
+                        // 合并每个卡片的图片
+                        Object.keys(cloudImages).forEach(cardId => {
+                            if (!mergedImages[cardId]) {
+                                mergedImages[cardId] = { images: [] };
+                            }
+                            // 合并云端图片，去重
+                            const localUrls = new Set(mergedImages[cardId].images.map(img => img.data));
+                            cloudImages[cardId].forEach(img => {
+                                if (!localUrls.has(img.url)) {
+                                    mergedImages[cardId].images.push(img);
+                                }
+                            });
+                        });
+
+                        // 保存合并后的数据
+                        saveStoredImages(mergedImages);
+                        console.log('✅ 已从 Supabase 加载图片');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 从 Supabase 加载失败:', error.message);
+                }
+            }
+
+            // 加载保存的图片
             loadSavedImages();
             loadSavedCardInfo();
             initEditButton();
