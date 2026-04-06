@@ -749,7 +749,7 @@
         .carousel-delete-btn {
             position: absolute;
             top: 10px;
-            right: 10px;
+            left: 10px;  /* 改为左上角，避免与页码重叠 */
             background: rgba(244, 67, 54, 0.85);
             color: white;
             border: none;
@@ -776,15 +776,15 @@
             opacity: 1;
         }
 
+        /* 删除按钮有 show 类时显示 */
+        .carousel-delete-btn.show {
+            display: flex !important;
+        }
+
         /* 编辑模式下显示删除按钮 */
         .card.editing .carousel-delete-btn {
             display: flex !important;
             opacity: 1;
-        }
-
-        /* 鼠标悬停轮播时显示删除按钮 */
-        .carousel-container:hover .carousel-delete-btn.show {
-            display: flex;
         }
 
         /* 删除确认对话框样式 */
