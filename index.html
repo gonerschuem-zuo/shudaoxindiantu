@@ -1311,25 +1311,20 @@
         const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
         const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
-        // ==================== imgbb 免费图床配置 ====================
-        // 使用 imgbb 完全免费 API，无需复杂配置
-        const IMGBB_CONFIG = {
-            apiKey: '7810a323a3f73712fa953b829361bd42',  // 免费公共 API key
-            apiUrl: 'https://api.imgbb.com/1/upload'
-        };
+        // ==================== 配置常量 ====================
+        const STORAGE_KEY = 'calligraphy_images';  // localStorage键名
+        const CARD_INFO_KEY = 'calligraphy_card_info';  // 卡片信息localStorage键名
+        const MAX_IMAGES = 10000;  // 最大图片数量
+        const MAX_IMAGE_SIZE = 10 * 1024 * 1024;  // 最大图片大小 10MB
+        const COMPRESS_TARGET_WIDTH = 1200;  // 压缩目标宽度
+        const COMPRESS_QUALITY = 0.85;  // 压缩质量（0-1）
+        const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
+        const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
-        // 备用方案：如需更高稳定性，可申请自己的 API key
-        // 访问：https://api.imgbb.com/ (完全免费)
-
-        // 各卡片对应的标签（用于分类）
-        const CARD_TAGS = {
-            '1': 'card_1_wang_xizhi',
-            '2': 'card_2_yan_zhenqing',
-            '3': 'card_3_liu_gongquan',
-            '4': 'card_4_su_shi',
-            '5': 'card_5_mi_fu',
-            '6': 'card_6_zhao_mengfu'
-        };
+        // ==================== 简化版配置：本地存储模式 ====================
+        // 图片存储在浏览器本地，同一设备上共享
+        // 如需多设备共享，可以导出/导入数据
+        const USE_CLOUD_STORAGE = false;  // 设为 false 使用本地存储
 
         // ==================== 编辑模式功能 ====================
 
@@ -2846,10 +2841,10 @@
         // ==================== 页面初始化 ====================
 
         /**
-         * 页面加载时恢复保存的图片（使用 imgbb）
+         * 页面加载时恢复保存的图片（本地存储）
          */
-        async function loadSavedImages() {
-            await loadImagesFromImgBB();
+        function loadSavedImages() {
+            reloadAllCards();
         }
 
         // ==================== 卡片选择功能 ====================
@@ -2903,7 +2898,7 @@
             }
         });
 
-        // 刷新按钮事件（使用 imgbb）
+        // 刷新按钮事件（刷新本地存储）
         const refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', async function() {
@@ -2911,11 +2906,10 @@
                 refreshBtn.innerHTML = '<span>⏳</span> 刷新中...';
 
                 try {
-                    await loadImagesFromImgBB();
-                    alert('✅ 已刷新云端图片！');
+                    reloadAllCards();
+                    alert('✅ 已刷新！');
                 } catch (error) {
                     console.error('刷新失败:', error);
-                    alert('刷新失败：' + error.message);
                 } finally {
                     refreshBtn.disabled = false;
                     refreshBtn.innerHTML = '<span>🔄</span> 刷新图片';
@@ -2963,7 +2957,8 @@
             }
         });
 
-        // 用户选择文件后的处理（使用 imgbb）
+        // ==================== 图片上传处理（简化版）====================
+        // 用户选择文件后的处理
         fileInput.addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);  // 获取选择的多个文件
 
@@ -2977,98 +2972,73 @@
                 return;
             }
 
-            // 获取当前卡片的 ID 和 tag
+            // 获取当前卡片的已有图片
             const cardId = selectedCard.getAttribute('data-card-id');
-            const tag = CARD_TAGS[cardId];
+            const imagesData = getStoredImages();
+            const existingImages = (imagesData[cardId]?.images && Array.isArray(imagesData[cardId].images))
+                ? [...imagesData[cardId].images]
+                : [];
 
-            if (!tag) {
-                alert('卡片配置错误，请刷新页面重试');
+            // 检查每个卡片的图片数量限制
+            if (existingImages.length + files.length > MAX_IMAGES_PER_CARD) {
+                alert(`每个卡片最多只能上传 ${MAX_IMAGES_PER_CARD} 张图片！\n当前已有 ${existingImages.length} 张，本次选择了 ${files.length} 张。`);
+                fileInput.value = '';
                 return;
             }
 
             try {
                 // 显示正在处理
                 uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<span>⏳</span> 正在上传到云端...';
+                uploadBtn.innerHTML = '<span>⏳</span> 正在处理图片...';
 
-                // 显示进度提示
-                const progressToast = document.createElement('div');
-                progressToast.className = 'gif-progress-toast show';
-                progressToast.innerHTML = '<div class="gif-spinner"></div><span id="uploadProgressText">正在准备上传...</span>';
-                document.body.appendChild(progressToast);
-                const progressText = progressToast.querySelector('#uploadProgressText');
-
-                let successCount = 0;
-                let failCount = 0;
-                const uploadedImages = [];
-
-                // 逐个上传文件
+                // 处理所有图片
+                const newImages = [];
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    progressText.textContent = `正在上传第 ${i + 1}/${files.length} 张图片...`;
+                    uploadBtn.innerHTML = `<span>⏳</span> 正在处理第 ${i + 1}/${files.length} 张图片...`;
 
-                    try {
-                        // 直接上传到 imgbb（无需压缩，imgbb 会自动处理）
-                        const result = await uploadToImgBB(file, tag);
+                    // 压缩图片
+                    const compressedBase64 = await compressImage(
+                        file,
+                        COMPRESS_TARGET_WIDTH,
+                        COMPRESS_QUALITY
+                    );
 
-                        // 保存到本地存储（用于共享）
-                        saveImageUrlToStorage(cardId, result);
-
-                        uploadedImages.push({
-                            data: result.url,
-                            thumbUrl: result.thumbUrl,
-                            deleteUrl: result.deleteUrl,
-                            timestamp: Date.now()
-                        });
-                        successCount++;
-
-                    } catch (error) {
-                        console.error(`第 ${i + 1} 张图片上传失败:`, error);
-                        failCount++;
-                    }
+                    newImages.push({
+                        data: compressedBase64,
+                        timestamp: Date.now()
+                    });
                 }
 
-                // 清除进度提示
-                progressToast.remove();
+                // 合并已有图片和新图片
+                const allImages = [...existingImages, ...newImages];
+
+                // 保存到localStorage
+                imagesData[cardId] = { images: allImages };
+                saveStoredImages(imagesData);
 
                 // 更新卡片显示
-                if (uploadedImages.length > 0) {
-                    createCarousel(selectedCard, uploadedImages);
-                }
+                createCarousel(selectedCard, allImages);
 
                 // 更新选中提示
                 const hint = selectedCard.querySelector('.select-hint');
-                if (hint) hint.textContent = `✅ 已上传 ${successCount} 张图片`;
+                if (hint) hint.textContent = `✅ 已保存 ${allImages.length} 张图片`;
 
-                // 更新存储信息
-                const sharedImages = getSharedImages();
-                const totalImages = Object.values(sharedImages).reduce((sum, imgs) => sum + (imgs?.length || 0), 0);
-                updateImgBBStorageInfo(totalImages);
-
-                // 显示上传结果
-                if (failCount > 0) {
-                    alert(
-                        `上传完成！\n\n` +
-                        `✅ 成功：${successCount} 张\n` +
-                        `❌ 失败：${failCount} 张\n\n` +
-                        `图片已保存到云端，学员之间可以共享！`
-                    );
-                } else {
-                    alert(
-                        `🎉 上传成功！\n\n` +
-                        `共上传 ${successCount} 张图片到云端。\n\n` +
-                        `所有学员都能看到这些图片！`
-                    );
-                }
+                // 显示成功提示
+                alert(
+                    `✅ 上传成功！\n\n` +
+                    `共上传 ${files.length} 张图片。\n` +
+                    `该卡片当前共有 ${allImages.length} 张图片。\n\n` +
+                    `图片已保存，刷新页面后依然存在。`
+                );
 
             } catch (error) {
-                console.error('图片上传失败:', error);
-                alert('图片上传失败：' + error.message);
+                console.error('图片处理失败:', error);
+                alert('图片处理失败：' + error.message);
             } finally {
                 // 恢复按钮状态
                 uploadBtn.disabled = false;
                 uploadBtn.innerHTML = '<span>📷</span> 添加照片（支持多选）';
-                // 清空文件输入框，允许重复选择同一文件
                 fileInput.value = '';
             }
         });
