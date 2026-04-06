@@ -1311,17 +1311,17 @@
         const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
         const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
-        // ==================== Cloudinary 配置 ====================
-        const CLOUDINARY_CONFIG = {
-            cloudName: 'calligraphy_mojian',  // Cloud name
-            uploadPreset: 'calligraphy_mojian',  // Upload preset name
-            folder: 'calligraphy',  // 文件夹名称
-            // 从 Cloudinary 获取图片的 API 端点
-            searchUrl: (cloudName, tag) =>
-                `https://res.cloudinary.com/${cloudName}/image/list/${tag}.json`
+        // ==================== imgbb 免费图床配置 ====================
+        // 使用 imgbb 完全免费 API，无需复杂配置
+        const IMGBB_CONFIG = {
+            apiKey: '7810a323a3f73712fa953b829361bd42',  // 免费公共 API key
+            apiUrl: 'https://api.imgbb.com/1/upload'
         };
 
-        // 各卡片对应的 Cloudinary tags
+        // 备用方案：如需更高稳定性，可申请自己的 API key
+        // 访问：https://api.imgbb.com/ (完全免费)
+
+        // 各卡片对应的标签（用于分类）
         const CARD_TAGS = {
             '1': 'card_1_wang_xizhi',
             '2': 'card_2_yan_zhenqing',
@@ -2282,6 +2282,171 @@
             }
         }
 
+        // ==================== imgbb 免费图床管理 ====================
+
+        /**
+         * 上传图片到 imgbb
+         * @param {File} file 图片文件
+         * @param {string} tag 图片标签（用于分类）
+         * @returns {Promise<Object>} 上传结果
+         */
+        async function uploadToImgBB(file, tag) {
+            try {
+                // 将文件转换为 Base64
+                const base64 = await fileToBase64(file);
+
+                const formData = new FormData();
+                formData.append('key', IMGBB_CONFIG.apiKey);
+                formData.append('image', base64);
+
+                console.log('🔍 开始上传到 imgbb:');
+                console.log('  API Key:', IMGBB_CONFIG.apiKey.substring(0, 10) + '...');
+                console.log('  Tag:', tag);
+
+                const response = await fetch(IMGBB_CONFIG.apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('✅ 上传成功:', data.data.url);
+
+                    return {
+                        url: data.data.url,
+                        deleteUrl: data.data.delete_url,
+                        thumbUrl: data.data.thumb.url,
+                        width: data.data.width,
+                        height: data.data.height,
+                        size: data.data.size,
+                        expiration: data.data.expiration,
+                        tag: tag
+                    };
+                } else {
+                    throw new Error(data.error?.message || '上传失败');
+                }
+            } catch (error) {
+                console.error('❌ imgbb 上传失败:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * 将文件转换为 Base64
+         * @param {File} file
+         * @returns {Promise<string>}
+         */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // 移除 data:image/xxx;base64, 前缀
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /**
+         * 保存图片 URL 到本地存储（用于多用户共享）
+         * @param {string} cardId 卡片ID
+         * @param {Object} imageData 图片数据
+         */
+        function saveImageUrlToStorage(cardId, imageData) {
+            try {
+                const STORAGE_KEY = 'calligraphy_shared_images';
+                let allImages = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+                if (!allImages[cardId]) {
+                    allImages[cardId] = [];
+                }
+
+                allImages[cardId].push({
+                    url: imageData.url,
+                    thumbUrl: imageData.thumbUrl,
+                    deleteUrl: imageData.deleteUrl,
+                    tag: imageData.tag,
+                    timestamp: Date.now()
+                });
+
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(allImages));
+            } catch (e) {
+                console.error('保存图片 URL 失败:', e);
+            }
+        }
+
+        /**
+         * 从本地存储获取所有图片（多用户共享）
+         * @returns {Object}
+         */
+        function getSharedImages() {
+            try {
+                const STORAGE_KEY = 'calligraphy_shared_images';
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            } catch (e) {
+                console.error('读取共享图片失败:', e);
+                return {};
+            }
+        }
+
+        /**
+         * 从 imgbb 加载所有卡片的图片（通过本地存储）
+         */
+        async function loadImagesFromImgBB() {
+            const loadingToast = document.createElement('div');
+            loadingToast.className = 'gif-progress-toast show';
+            loadingToast.innerHTML = '<div class="gif-spinner"></div><span>正在加载图片...</span>';
+            document.body.appendChild(loadingToast);
+
+            try {
+                const sharedImages = getSharedImages();
+
+                // 更新所有卡片的显示
+                Object.entries(sharedImages).forEach(([cardId, images]) => {
+                    if (images && images.length > 0) {
+                        const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
+                        if (card) {
+                            createCarousel(card, images.map(img => ({
+                                data: img.url,
+                                thumbUrl: img.thumbUrl,
+                                deleteUrl: img.deleteUrl,
+                                timestamp: img.timestamp
+                            })));
+                        }
+                    }
+                });
+
+                // 计算总图片数
+                const totalCount = Object.values(sharedImages).reduce((sum, imgs) => sum + (imgs?.length || 0), 0);
+                updateImgBBStorageInfo(totalCount);
+
+            } catch (error) {
+                console.error('加载图片失败:', error);
+            } finally {
+                setTimeout(() => loadingToast.remove(), 500);
+            }
+        }
+
+        /**
+         * 更新 imgbb 存储信息显示
+         * @param {number} count 图片数量
+         */
+        function updateImgBBStorageInfo(count) {
+            storageCount.textContent = `已存储 ${count} 张图片（学员共享）`;
+
+            storageInfo.classList.remove('warning', 'error');
+            if (count >= MAX_IMAGES) {
+                storageInfo.classList.add('error');
+                storageCount.textContent = `⚠️ 已存储 ${count} 张图片（已达上限！）`;
+            } else if (count >= MAX_IMAGES * 0.8) {
+                storageInfo.classList.add('warning');
+                storageCount.textContent = `⚠️ 已存储 ${count} 张图片（接近上限）`;
+            }
+        }
+
         // ==================== Cloudinary 云存储管理 ====================
 
         /**
@@ -2681,16 +2846,10 @@
         // ==================== 页面初始化 ====================
 
         /**
-         * 页面加载时恢复保存的图片
+         * 页面加载时恢复保存的图片（使用 imgbb）
          */
         async function loadSavedImages() {
-            // 如果已配置 Cloudinary，从云端加载
-            if (CLOUDINARY_CONFIG.cloudName !== 'demo' && CLOUDINARY_CONFIG.uploadPreset !== 'unsigned_preset') {
-                await loadImagesFromCloudinary();
-            } else {
-                // 否则从本地加载（旧版兼容）
-                reloadAllCards();
-            }
+            await loadImagesFromImgBB();
         }
 
         // ==================== 卡片选择功能 ====================
@@ -2744,7 +2903,7 @@
             }
         });
 
-        // 刷新按钮事件
+        // 刷新按钮事件（使用 imgbb）
         const refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', async function() {
@@ -2752,13 +2911,8 @@
                 refreshBtn.innerHTML = '<span>⏳</span> 刷新中...';
 
                 try {
-                    if (CLOUDINARY_CONFIG.cloudName !== 'demo' && CLOUDINARY_CONFIG.uploadPreset !== 'unsigned_preset') {
-                        await loadImagesFromCloudinary();
-                        alert('✅ 已刷新云端图片！');
-                    } else {
-                        await loadSavedImages();
-                        alert('✅ 已刷新本地缓存！');
-                    }
+                    await loadImagesFromImgBB();
+                    alert('✅ 已刷新云端图片！');
                 } catch (error) {
                     console.error('刷新失败:', error);
                     alert('刷新失败：' + error.message);
@@ -2809,7 +2963,7 @@
             }
         });
 
-        // 用户选择文件后的处理
+        // 用户选择文件后的处理（使用 imgbb）
         fileInput.addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);  // 获取选择的多个文件
 
@@ -2823,29 +2977,13 @@
                 return;
             }
 
-            // 获取当前卡片的 tag
+            // 获取当前卡片的 ID 和 tag
             const cardId = selectedCard.getAttribute('data-card-id');
             const tag = CARD_TAGS[cardId];
 
             if (!tag) {
                 alert('卡片配置错误，请刷新页面重试');
                 return;
-            }
-
-            // 检查 Cloudinary 配置
-            if (CLOUDINARY_CONFIG.cloudName === 'demo' || CLOUDINARY_CONFIG.uploadPreset === 'unsigned_preset') {
-                const confirmSetup = confirm(
-                    '⚠️ 检测到未配置 Cloudinary！\n\n' +
-                    '当前只能上传到本地浏览器（其他人看不到）。\n\n' +
-                    '点击"确定"继续本地上传\n' +
-                    '点击"取消"查看配置指南\n\n' +
-                    '配置 Cloudinary 后，所有人都能看到你上传的图片！'
-                );
-                if (!confirmSetup) {
-                    alert('请查看项目目录下的 CLOUDINARY_SETUP.md 文件获取配置指南');
-                    fileInput.value = '';
-                    return;
-                }
             }
 
             try {
@@ -2870,23 +3008,17 @@
                     progressText.textContent = `正在上传第 ${i + 1}/${files.length} 张图片...`;
 
                     try {
-                        // 压缩图片
-                        const compressedBase64 = await compressImage(
-                            file,
-                            COMPRESS_TARGET_WIDTH,
-                            COMPRESS_QUALITY
-                        );
+                        // 直接上传到 imgbb（无需压缩，imgbb 会自动处理）
+                        const result = await uploadToImgBB(file, tag);
 
-                        // 将 base64 转换为 Blob
-                        const response = await fetch(compressedBase64);
-                        const blob = await response.blob();
-                        const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                        // 保存到本地存储（用于共享）
+                        saveImageUrlToStorage(cardId, result);
 
-                        // 上传到 Cloudinary
-                        const result = await uploadToCloudinary(compressedFile, tag);
                         uploadedImages.push({
                             data: result.url,
-                            cloudinary: result
+                            thumbUrl: result.thumbUrl,
+                            deleteUrl: result.deleteUrl,
+                            timestamp: Date.now()
                         });
                         successCount++;
 
@@ -2900,14 +3032,18 @@
                 progressToast.remove();
 
                 // 更新卡片显示
-                const cardImages = await getImagesFromCloudinary(tag);
-                if (cardImages.length > 0) {
-                    createCarousel(selectedCard, cardImages.map(img => ({ data: img.url, cloudinary: img })));
+                if (uploadedImages.length > 0) {
+                    createCarousel(selectedCard, uploadedImages);
                 }
 
                 // 更新选中提示
                 const hint = selectedCard.querySelector('.select-hint');
                 if (hint) hint.textContent = `✅ 已上传 ${successCount} 张图片`;
+
+                // 更新存储信息
+                const sharedImages = getSharedImages();
+                const totalImages = Object.values(sharedImages).reduce((sum, imgs) => sum + (imgs?.length || 0), 0);
+                updateImgBBStorageInfo(totalImages);
 
                 // 显示上传结果
                 if (failCount > 0) {
@@ -2915,21 +3051,15 @@
                         `上传完成！\n\n` +
                         `✅ 成功：${successCount} 张\n` +
                         `❌ 失败：${failCount} 张\n\n` +
-                        `该卡片当前共有 ${cardImages.length} 张图片。\n` +
-                        `图片已保存到云端，所有人都能看到！`
+                        `图片已保存到云端，学员之间可以共享！`
                     );
                 } else {
                     alert(
                         `🎉 上传成功！\n\n` +
-                        `共上传 ${successCount} 张图片到云端。\n` +
-                        `该卡片当前共有 ${cardImages.length} 张图片。\n\n` +
-                        `所有人现在都能看到这些图片了！`
+                        `共上传 ${successCount} 张图片到云端。\n\n` +
+                        `所有学员都能看到这些图片！`
                     );
                 }
-
-                // 更新存储信息
-                const totalImages = await getTotalCloudinaryImages();
-                updateCloudinaryStorageInfo(totalImages);
 
             } catch (error) {
                 console.error('图片上传失败:', error);
