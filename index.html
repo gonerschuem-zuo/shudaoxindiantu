@@ -2319,10 +2319,8 @@
                     console.error('❌ 上传失败，错误详情:', errorData);
 
                     // 显示详细的错误提示
-                    let errorMsg = errorData.error?.message || '上传失败';
-                    if (errorData.error?.message?.includes('upload_preset')) {
-                        errorMsg += '\n\n请检查：\n1. Upload Preset 名称是否正确\n2. Signing mode 是否为 Unsigned\n访问：https://cloudinary.com/console/settings/upload';
-                    }
+                    let errorMsg = errorData.error?.message || JSON.stringify(errorData);
+                    alert(`❌ 上传失败！\n\n错误信息：${errorMsg}\n\n请截图此错误并联系技术支持。`);
                     throw new Error(errorMsg);
                 }
 
