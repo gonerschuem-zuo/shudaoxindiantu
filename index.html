@@ -992,6 +992,9 @@
             <button class="clear-btn" id="clearBtn">
                 <span>🗑️</span> 清理缓存
             </button>
+            <button class="clear-btn" id="resetDefaultsBtn" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                <span>🔄</span> 恢复默认
+            </button>
         </div>
         <div class="storage-info" id="storageInfo">
             <span>💾</span> <span id="storageCount">已存储 0 张图片</span>
@@ -1289,6 +1292,18 @@
         </div>
     </div>
 
+    <!-- 恢复默认确认对话框 -->
+    <div class="delete-confirm-dialog" id="resetConfirmDialog">
+        <div class="delete-confirm-box">
+            <h3>🔄 恢复默认设置</h3>
+            <p>确定要将所有卡片信息恢复为默认内容吗？<br>此操作将清除所有自定义编辑，不可恢复。</p>
+            <div class="delete-confirm-actions">
+                <button class="delete-confirm-btn cancel" id="resetCancelBtn">取消</button>
+                <button class="delete-confirm-btn confirm" id="resetConfirmBtn">确认恢复</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript代码：处理卡片选择和照片上传 -->
     <script>
         // ==================== 全局变量 ====================
@@ -1485,10 +1500,32 @@
 
             // 收集编辑的数据
             const editData = {};
+            const errors = [];
+
             editInputs.forEach(input => {
                 const field = input.getAttribute('data-field');
-                editData[field] = input.value;
+                editData[field] = input.value.trim();
+
+                // 输入验证
+                if (field === 'name' && !editData[field]) {
+                    errors.push('姓名不能为空');
+                }
+                if (field === 'age' && !editData[field]) {
+                    errors.push('生卒年份不能为空');
+                }
+                if (field === 'styleTitle' && !editData[field]) {
+                    errors.push('风格标题不能为空');
+                }
+                if (field === 'styleDesc' && !editData[field]) {
+                    errors.push('风格描述不能为空');
+                }
             });
+
+            // 如果有验证错误，显示提示并返回
+            if (errors.length > 0) {
+                alert('⚠️ 保存失败：\n' + errors.join('\n'));
+                return;
+            }
 
             // 更新显示模式的内容
             updateCardDisplay(card, editData);
@@ -1557,6 +1594,34 @@
             if (styleDescEl && data.styleDesc) {
                 styleDescEl.textContent = data.styleDesc;
             }
+        }
+
+        /**
+         * 恢复所有卡片为默认内容
+         */
+        function resetAllCardsToDefaults() {
+            cards.forEach(card => {
+                const cardId = card.getAttribute('data-card-id');
+                const defaultData = getDefaultCardData(cardId);
+
+                // 更新显示
+                updateCardDisplay(card, defaultData);
+
+                // 更新输入框
+                const editInputs = card.querySelectorAll('.edit-input, .edit-textarea');
+                editInputs.forEach(input => {
+                    const field = input.getAttribute('data-field');
+                    if (defaultData[field] !== undefined) {
+                        input.value = defaultData[field];
+                    }
+                });
+            });
+
+            // 清除localStorage中的卡片信息
+            localStorage.removeItem(CARD_INFO_KEY);
+
+            // 显示成功提示
+            alert('✅ 所有卡片已恢复为默认内容');
         }
 
         /**
@@ -3117,6 +3182,32 @@
                 }
             }
         });
+
+        // 恢复默认按钮事件
+        const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+        const resetConfirmDialog = document.getElementById('resetConfirmDialog');
+        const resetConfirmBtn = document.getElementById('resetConfirmBtn');
+        const resetCancelBtn = document.getElementById('resetCancelBtn');
+
+        if (resetDefaultsBtn && resetConfirmDialog) {
+            resetDefaultsBtn.addEventListener('click', function() {
+                resetConfirmDialog.classList.add('show');
+            });
+        }
+
+        if (resetCancelBtn && resetConfirmDialog) {
+            resetCancelBtn.addEventListener('click', function() {
+                resetConfirmDialog.classList.remove('show');
+            });
+        }
+
+        if (resetConfirmBtn && resetConfirmDialog) {
+            resetConfirmBtn.addEventListener('click', function() {
+                resetAllCardsToDefaults();
+                resetConfirmDialog.classList.remove('show');
+            });
+        }
+
 
         // ==================== 图片上传处理（支持云端和本地）====================
         // 用户选择文件后的处理
