@@ -1209,25 +1209,6 @@
         <span id="gifProgressText">正在生成GIF动图...</span>
     </div>
 
-    <!-- 删除确认对话框 -->
-    <div class="delete-confirm-dialog" id="imageDeleteDialog">
-        <div class="delete-confirm-box">
-            <h3>🗑️ 删除图片</h3>
-            <p>请选择删除方式：</p>
-            <div class="delete-confirm-actions" style="flex-direction: column; gap: 10px;">
-                <button class="delete-confirm-btn confirm" onclick="handleImageDelete(false)" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
-                    💻 只删除本地
-                </button>
-                <button class="delete-confirm-btn confirm" onclick="handleImageDelete(true)">
-                    🗑️ 删除本地和云端
-                </button>
-                <button class="delete-confirm-btn cancel" onclick="closeImageDeleteDialog()">
-                    取消
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- 恢复默认确认对话框 -->
     <div class="delete-confirm-dialog" id="resetConfirmDialog">
         <div class="delete-confirm-box">
@@ -1927,74 +1908,50 @@
 
         // ==================== 图片删除功能 ====================
 
-        // 全局变量
-        let pendingDeleteCardId = null;
-        let pendingDeleteIndex = null;
-
         /**
          * 确认并删除图片
          * @param {string} cardId 卡片ID
          * @param {number} imageIndex 图片索引
          */
         function confirmAndDeleteImage(cardId, imageIndex) {
-            pendingDeleteCardId = cardId;
-            pendingDeleteIndex = imageIndex;
-
-            const dialog = document.getElementById('imageDeleteDialog');
-            if (dialog) {
-                dialog.classList.add('show');
-            } else {
-                alert('删除对话框未找到，请刷新页面重试。');
-            }
-        }
-
-        /**
-         * 处理删除操作
-         * @param {boolean} deleteFromCloud 是否从云端删除
-         */
-        async function handleImageDelete(deleteFromCloud) {
-            if (pendingDeleteCardId === null || pendingDeleteIndex === null) {
-                alert('删除信息丢失，请重新选择要删除的图片。');
-                closeImageDeleteDialog();
-                return;
-            }
-
-            const card = document.querySelector(`.card[data-card-id="${pendingDeleteCardId}"]`);
+            const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
             if (!card) {
-                alert('找不到要删除的卡片，请刷新页面重试。');
-                closeImageDeleteDialog();
+                alert('找不到卡片，请刷新页面重试。');
                 return;
             }
 
-            closeImageDeleteDialog();
-
-            try {
-                await deleteImage(card, pendingDeleteIndex, deleteFromCloud);
-            } catch (error) {
-                console.error('删除失败:', error);
-                alert('删除失败：' + error.message);
+            const imagesData = getStoredImages();
+            if (!imagesData[cardId] || !imagesData[cardId].images) {
+                alert('没有找到图片数据。');
+                return;
             }
+
+            const currentImages = imagesData[cardId].images;
+            const imageToDelete = currentImages[imageIndex];
+            const isCloudImage = imageToDelete && imageToDelete.isCloud;
+
+            // 构建确认消息
+            let message = `确定要删除第 ${imageIndex + 1} 张图片吗？\n\n`;
+            if (isCloudImage) {
+                message += '点击「确定」删除本地和云端\n点击「取消」只删除本地，保留云端';
+            } else {
+                message += '此操作将删除本地图片。';
+            }
+
+            // 使用confirm确认
+            const result = confirm(message);
+
+            // 执行删除
+            executeDelete(card, imageIndex, result); // result=true表示删除云端，false表示只删除本地
         }
 
         /**
-         * 关闭删除对话框
-         */
-        function closeImageDeleteDialog() {
-            const dialog = document.getElementById('imageDeleteDialog');
-            if (dialog) {
-                dialog.classList.remove('show');
-            }
-            pendingDeleteCardId = null;
-            pendingDeleteIndex = null;
-        }
-
-        /**
-         * 删除图片
+         * 执行删除操作
          * @param {HTMLElement} card 卡片元素
          * @param {number} imageIndex 图片索引
          * @param {boolean} deleteFromCloud 是否从云端删除
          */
-        async function deleteImage(card, imageIndex, deleteFromCloud) {
+        async function executeDelete(card, imageIndex, deleteFromCloud) {
             const cardId = card.getAttribute('data-card-id');
             const imagesData = getStoredImages();
 
@@ -2019,7 +1976,6 @@
                     console.log('已从云端删除');
                 } catch (error) {
                     console.warn('云端删除失败:', error);
-                    alert('云端删除失败，但本地已删除。');
                 }
             }
 
@@ -2045,10 +2001,7 @@
                     : '👆 点击选中';
             }
 
-            const message = deleteFromCloud
-                ? `已从本地和云端删除！剩余 ${currentImages.length} 张图片`
-                : `已从本地删除！云端图片保留。剩余 ${currentImages.length} 张图片`;
-            alert(message);
+            console.log('删除成功，剩余', currentImages.length, '张图片');
         }
 
         // ==================== GIF导出功能 ====================
