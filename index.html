@@ -526,6 +526,11 @@
             pointer-events: none;
         }
 
+        /* 编辑模式下，删除按钮仍然可点击 */
+        .card.editing .carousel-delete-btn {
+            pointer-events: auto !important;
+        }
+
         .card.editing .seal {
             opacity: 0.3;
         }
@@ -2251,13 +2256,14 @@
         }
 
         /**
-         * 等待所有图片加载完成
+         * 等待所有图片加载完成（按原始顺序）
          * @param {Array} images 图片数组
          * @returns {Promise<Array>} 加载完成的图片数组
          */
         function waitForImagesLoad(images) {
             return new Promise((resolve, reject) => {
-                const loadedImages = [];
+                // 创建一个与原图数组相同长度的数组，保持顺序
+                const loadedImages = new Array(images.length);
                 let loadedCount = 0;
                 let hasError = false;
 
@@ -2266,17 +2272,20 @@
                     img.crossOrigin = 'anonymous';
 
                     img.onload = () => {
-                        loadedImages.push({
+                        // 将图片存储在对应的索引位置，保持原始顺序
+                        loadedImages[index] = {
                             data: imageData.data,
                             element: img,
                             width: img.width,
                             height: img.height
-                        });
+                        };
                         loadedCount++;
 
                         if (loadedCount === images.length) {
                             if (!hasError) {
-                                resolve(loadedImages);
+                                // 过滤掉可能的空位，确保返回连续数组
+                                const result = loadedImages.filter(img => img !== undefined);
+                                resolve(result);
                             }
                         }
                     };
