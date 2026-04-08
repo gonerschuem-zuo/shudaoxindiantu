@@ -753,174 +753,41 @@
         /* 删除按钮样式 */
         .carousel-delete-btn {
             position: absolute;
-            top: 10px;
-            left: 10px;  /* 改为左上角，避免与页码重叠 */
-            background: rgba(244, 67, 54, 0.85);
+            top: 8px;
+            left: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(244, 67, 54, 0.9);
             color: white;
-            border: none;
-            width: 28px;
-            height: 28px;
+            border: 2px solid white;
             border-radius: 50%;
+            font-size: 20px;
+            font-weight: bold;
             cursor: pointer;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            z-index: 25;
+            z-index: 100;
             opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease;
+            line-height: 1;
+            padding: 0;
+            margin: 0;
         }
 
         .carousel-delete-btn:hover {
-            background: rgba(211, 47, 47, 0.95);
+            background: rgba(211, 47, 47, 1);
             transform: scale(1.1);
+            opacity: 1 !important;
         }
 
-        .card:hover .carousel-delete-btn {
+        .carousel-slide:hover .carousel-delete-btn {
             opacity: 1;
+            transform: scale(1);
         }
 
-        /* 删除按钮有 show 类时显示 */
-        .carousel-delete-btn.show {
-            display: flex !important;
-        }
-
-        /* 编辑模式下显示删除按钮 */
-        .card.editing .carousel-delete-btn {
-            display: flex !important;
-            opacity: 1;
-        }
-
-        /* 删除确认对话框样式 */
-        .delete-confirm-dialog {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-        }
-
-        .delete-confirm-dialog.show {
-            display: flex;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .delete-confirm-box {
-            background: white;
-            padding: 25px 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 380px;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .delete-confirm-box h3 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
-        }
-
-        .delete-confirm-box p {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-        }
-
-        /* 删除选项容器 */
-        .delete-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        /* 删除选项按钮 */
-        .delete-option-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-
-        .delete-option-btn:hover {
-            border-color: #2196F3;
-            background: #f5f9ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
-        }
-
-        .delete-option-btn.danger:hover {
-            border-color: #f44336;
-            background: #fff5f5;
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.15);
-        }
-
-        .delete-option-icon {
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-
-        .delete-option-text {
-            flex: 1;
-        }
-
-        .delete-option-title {
-            font-weight: 600;
-            color: #333;
-            font-size: 0.95rem;
-            margin-bottom: 4px;
-        }
-
-        .delete-option-desc {
-            font-size: 0.85rem;
-            color: #888;
-            line-height: 1.3;
-        }
-
-        .delete-confirm-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .delete-confirm-btn {
-            padding: 10px 25px;
-            border: none;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+        /* 编辑模式样式 */
 
         .delete-confirm-btn.confirm {
             background: linear-gradient(135deg, #f44336, #d32f2f);
@@ -1343,28 +1210,20 @@
     </div>
 
     <!-- 删除确认对话框 -->
-    <div class="delete-confirm-dialog" id="deleteConfirmDialog">
+    <div class="delete-confirm-dialog" id="imageDeleteDialog">
         <div class="delete-confirm-box">
             <h3>🗑️ 删除图片</h3>
             <p>请选择删除方式：</p>
-            <div class="delete-options">
-                <button class="delete-option-btn" id="deleteLocalBtn">
-                    <span class="delete-option-icon">💻</span>
-                    <div class="delete-option-text">
-                        <div class="delete-option-title">只删除本地</div>
-                        <div class="delete-option-desc">从浏览器缓存删除，云端图片保留</div>
-                    </div>
+            <div class="delete-confirm-actions" style="flex-direction: column; gap: 10px;">
+                <button class="delete-confirm-btn confirm" onclick="handleImageDelete(false)" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
+                    💻 只删除本地
                 </button>
-                <button class="delete-option-btn danger" id="deleteBothBtn">
-                    <span class="delete-option-icon">🗑️</span>
-                    <div class="delete-option-text">
-                        <div class="delete-option-title">删除本地和云端</div>
-                        <div class="delete-option-desc">从本地和云端完全删除，不可恢复</div>
-                    </div>
+                <button class="delete-confirm-btn confirm" onclick="handleImageDelete(true)">
+                    🗑️ 删除本地和云端
                 </button>
-            </div>
-            <div class="delete-confirm-actions">
-                <button class="delete-confirm-btn cancel" id="deleteCancelBtn">取消</button>
+                <button class="delete-confirm-btn cancel" onclick="closeImageDeleteDialog()">
+                    取消
+                </button>
             </div>
         </div>
     </div>
@@ -1865,20 +1724,17 @@
                 // 添加删除按钮
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'carousel-delete-btn';
-                deleteBtn.innerHTML = '&#10005;'; // × 符号
+                deleteBtn.innerHTML = '×';
                 deleteBtn.title = '删除此图片';
-                deleteBtn.style.display = 'flex';  // 强制显示
-                deleteBtn.style.opacity = '1';  // 强制可见
-
-                // 使用闭包保存card引用，并添加详细调试信息
-                deleteBtn.onclick = (e) => {
+                deleteBtn.dataset.index = index;
+                deleteBtn.dataset.cardId = card.getAttribute('data-card-id');
+                // 使用事件委托，避免闭包问题
+                deleteBtn.onclick = function(e) {
+                    e.preventDefault();
                     e.stopPropagation();
-                    console.log('=== 删除按钮被点击 ===');
-                    console.log('图片索引:', index);
-                    console.log('card element:', card);
-                    console.log('card className:', card.className);
-                    console.log('card data-card-id:', card.getAttribute('data-card-id'));
-                    showDeleteConfirm(card, index);
+                    const imgIndex = parseInt(this.dataset.index);
+                    const cardId = this.dataset.cardId;
+                    confirmAndDeleteImage(cardId, imgIndex);
                 };
                 slide.appendChild(deleteBtn);
 
@@ -2071,132 +1927,60 @@
 
         // ==================== 图片删除功能 ====================
 
-        // 全局变量存储待删除的卡片ID和图片索引
+        // 全局变量
         let pendingDeleteCardId = null;
         let pendingDeleteIndex = null;
 
         /**
-         * 显示删除确认对话框（并动态绑定事件）
-         * @param {HTMLElement} card 卡片元素
+         * 确认并删除图片
+         * @param {string} cardId 卡片ID
          * @param {number} imageIndex 图片索引
          */
-        function showDeleteConfirm(card, imageIndex) {
-            console.log('=== showDeleteConfirm 开始 ===');
-            console.log('card element:', card);
-            console.log('imageIndex:', imageIndex);
-
-            // 获取并存储cardId
-            const cardId = card.getAttribute('data-card-id');
-            console.log('cardId:', cardId);
-
-            if (!cardId) {
-                console.error('无法获取cardId！');
-                alert('无法识别要删除的卡片，请刷新页面重试。');
-                return;
-            }
-
-            // 存储到全局变量
+        function confirmAndDeleteImage(cardId, imageIndex) {
             pendingDeleteCardId = cardId;
             pendingDeleteIndex = imageIndex;
 
-            const dialog = document.getElementById('deleteConfirmDialog');
-            if (!dialog) {
-                console.error('删除确认对话框未找到！');
-                alert('删除确认对话框未找到，请刷新页面重试。');
-                return;
+            const dialog = document.getElementById('imageDeleteDialog');
+            if (dialog) {
+                dialog.classList.add('show');
+            } else {
+                alert('删除对话框未找到，请刷新页面重试。');
             }
-
-            // 动态绑定按钮事件（每次显示对话框时都重新绑定）
-            bindDeleteOptionButtons();
-
-            // 显示对话框
-            dialog.classList.add('show');
-            console.log('删除确认对话框已显示');
         }
 
         /**
-         * 动态绑定删除选项按钮事件
-         */
-        function bindDeleteOptionButtons() {
-            const deleteLocalBtn = document.getElementById('deleteLocalBtn');
-            const deleteBothBtn = document.getElementById('deleteBothBtn');
-            const deleteCancelBtn = document.getElementById('deleteCancelBtn');
-
-            console.log('=== bindDeleteOptionButtons 开始 ===');
-            console.log('deleteLocalBtn:', deleteLocalBtn);
-            console.log('deleteBothBtn:', deleteBothBtn);
-            console.log('deleteCancelBtn:', deleteCancelBtn);
-
-            if (!deleteLocalBtn || !deleteBothBtn || !deleteCancelBtn) {
-                console.error('删除选项按钮未找到！');
-                alert('删除对话框按钮未找到，请刷新页面重试。');
-                return;
-            }
-
-            // 移除旧的事件监听器（通过克隆节点）
-            const newDeleteLocalBtn = deleteLocalBtn.cloneNode(true);
-            const newDeleteBothBtn = deleteBothBtn.cloneNode(true);
-            const newDeleteCancelBtn = deleteCancelBtn.cloneNode(true);
-            deleteLocalBtn.parentNode.replaceChild(newDeleteLocalBtn, deleteLocalBtn);
-            deleteBothBtn.parentNode.replaceChild(newDeleteBothBtn, deleteBothBtn);
-            deleteCancelBtn.parentNode.replaceChild(newDeleteCancelBtn, deleteCancelBtn);
-
-            // 只删除本地
-            newDeleteLocalBtn.addEventListener('click', async () => {
-                console.log('=== 只删除本地按钮被点击 ===');
-                await executeDelete(false);
-            });
-
-            // 删除本地和云端
-            newDeleteBothBtn.addEventListener('click', async () => {
-                console.log('=== 删除本地和云端按钮被点击 ===');
-                await executeDelete(true);
-            });
-
-            // 取消删除
-            newDeleteCancelBtn.addEventListener('click', () => {
-                console.log('=== 取消删除 ===');
-                closeDeleteDialog();
-            });
-
-            console.log('✅ 删除选项按钮事件绑定完成');
-        }
-
-        /**
-         * 执行删除操作
+         * 处理删除操作
          * @param {boolean} deleteFromCloud 是否从云端删除
          */
-        async function executeDelete(deleteFromCloud) {
-            console.log('=== executeDelete 开始 ===');
-            console.log('pendingDeleteCardId:', pendingDeleteCardId);
-            console.log('pendingDeleteIndex:', pendingDeleteIndex);
-            console.log('deleteFromCloud:', deleteFromCloud);
-
+        async function handleImageDelete(deleteFromCloud) {
             if (pendingDeleteCardId === null || pendingDeleteIndex === null) {
                 alert('删除信息丢失，请重新选择要删除的图片。');
-                closeDeleteDialog();
+                closeImageDeleteDialog();
                 return;
             }
 
             const card = document.querySelector(`.card[data-card-id="${pendingDeleteCardId}"]`);
             if (!card) {
                 alert('找不到要删除的卡片，请刷新页面重试。');
-                closeDeleteDialog();
+                closeImageDeleteDialog();
                 return;
             }
 
-            // 先关闭对话框
-            closeDeleteDialog();
+            closeImageDeleteDialog();
 
-            // 执行删除
-            await deleteCardImage(card, pendingDeleteIndex, deleteFromCloud);
+            try {
+                await deleteImage(card, pendingDeleteIndex, deleteFromCloud);
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败：' + error.message);
+            }
         }
 
         /**
-         * 关闭删除对话框并清除状态
+         * 关闭删除对话框
          */
-        function closeDeleteDialog() {
-            const dialog = document.getElementById('deleteConfirmDialog');
+        function closeImageDeleteDialog() {
+            const dialog = document.getElementById('imageDeleteDialog');
             if (dialog) {
                 dialog.classList.remove('show');
             }
@@ -2205,84 +1989,62 @@
         }
 
         /**
-         * 删除卡片中的指定图片
+         * 删除图片
          * @param {HTMLElement} card 卡片元素
          * @param {number} imageIndex 图片索引
-         * @param {boolean} deleteFromCloud 是否从云端删除（true=删除本地和云端，false=只删除本地）
+         * @param {boolean} deleteFromCloud 是否从云端删除
          */
-        async function deleteCardImage(card, imageIndex, deleteFromCloud = false) {
-            console.log('=== deleteCardImage 开始 ===');
-            console.log('card:', card);
-            console.log('imageIndex:', imageIndex);
-            console.log('deleteFromCloud:', deleteFromCloud);
-
+        async function deleteImage(card, imageIndex, deleteFromCloud) {
             const cardId = card.getAttribute('data-card-id');
-            console.log('cardId:', cardId);
-
             const imagesData = getStoredImages();
-            console.log('imagesData:', imagesData);
 
-            // 获取当前卡片的图片
-            let currentImages = [];
-            if (imagesData[cardId] && imagesData[cardId].images) {
-                currentImages = [...imagesData[cardId].images];
+            if (!imagesData[cardId] || !imagesData[cardId].images) {
+                alert('没有找到要删除的图片数据。');
+                return;
             }
-            console.log('currentImages:', currentImages);
-            console.log('currentImages.length:', currentImages.length);
 
-            // 检查索引是否有效
+            const currentImages = [...imagesData[cardId].images];
+
             if (imageIndex < 0 || imageIndex >= currentImages.length) {
-                alert('无效的图片索引！');
+                alert('无效的图片索引。');
                 return;
             }
 
             const imageToDelete = currentImages[imageIndex];
-            console.log('imageToDelete:', imageToDelete);
 
-            // 如果是云端图片，且选择从云端删除
-            if (deleteFromCloud && imageToDelete.isCloud && imageToDelete.path && useSupabase) {
+            // 如果需要从云端删除
+            if (deleteFromCloud && imageToDelete.isCloud && imageToDelete.path) {
                 try {
                     await deleteFromSupabase(imageToDelete.path);
-                    console.log('✅ 已从云端删除');
+                    console.log('已从云端删除');
                 } catch (error) {
-                    console.warn('⚠️ 删除云端图片失败:', error.message);
-                    alert('云端图片删除失败，但本地已删除。');
+                    console.warn('云端删除失败:', error);
+                    alert('云端删除失败，但本地已删除。');
                 }
-            } else if (imageToDelete.isCloud && !deleteFromCloud) {
-                console.log('只删除本地，云端图片保留');
             }
 
-            // 删除指定图片（始终从本地删除）
+            // 从本地删除
             currentImages.splice(imageIndex, 1);
-            console.log('删除后 currentImages:', currentImages);
 
-            // 更新localStorage
+            // 更新存储
             if (currentImages.length > 0) {
                 imagesData[cardId].images = currentImages;
             } else {
-                // 如果没有图片了，删除整个卡片的数据
                 delete imagesData[cardId];
             }
             saveStoredImages(imagesData);
-            console.log('已保存到 localStorage');
 
-            // 更新卡片显示
+            // 更新显示
             createCarousel(card, currentImages);
-            console.log('已更新轮播图');
 
-            // 更新选中提示
+            // 更新提示
             const hint = card.querySelector('.select-hint');
             if (hint) {
-                if (currentImages.length > 0) {
-                    hint.textContent = `✅ 已保存 ${currentImages.length} 张图片`;
-                } else {
-                    hint.textContent = '👆 点击选中';
-                }
+                hint.textContent = currentImages.length > 0
+                    ? `✅ 已保存 ${currentImages.length} 张图片`
+                    : '👆 点击选中';
             }
 
-            console.log('=== deleteCardImage 完成 ===');
-
-            // 根据删除方式显示不同的提示
             const message = deleteFromCloud
                 ? `已从本地和云端删除！剩余 ${currentImages.length} 张图片`
                 : `已从本地删除！云端图片保留。剩余 ${currentImages.length} 张图片`;
