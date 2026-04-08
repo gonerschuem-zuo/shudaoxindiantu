@@ -1797,9 +1797,15 @@
                 deleteBtn.title = '删除此图片';
                 deleteBtn.style.display = 'flex';  // 强制显示
                 deleteBtn.style.opacity = '1';  // 强制可见
+
+                // 使用闭包保存card引用，并添加详细调试信息
                 deleteBtn.onclick = (e) => {
                     e.stopPropagation();
-                    console.log('删除按钮被点击，图片索引:', index);
+                    console.log('=== 删除按钮被点击 ===');
+                    console.log('图片索引:', index);
+                    console.log('card element:', card);
+                    console.log('card className:', card.className);
+                    console.log('card data-card-id:', card.getAttribute('data-card-id'));
                     showDeleteConfirm(card, index);
                 };
                 slide.appendChild(deleteBtn);
@@ -1993,8 +1999,8 @@
 
         // ==================== 图片删除功能 ====================
 
-        // 全局变量存储待删除的卡片和图片索引
-        let pendingDeleteCard = null;
+        // 全局变量存储待删除的卡片ID和图片索引（使用cardId而不是DOM元素）
+        let pendingDeleteCardId = null;
         let pendingDeleteIndex = null;
 
         // 标志位：确保事件只绑定一次
@@ -2017,24 +2023,28 @@
             console.log('document.readyState:', document.readyState);
 
             if (!confirmBtn || !cancelBtn) {
-                console.error('确认对话框按钮未找到！');
-                console.error('confirmBtn 存在:', !!confirmBtn);
-                console.error('cancelBtn 存在:', !!cancelBtn);
+                console.warn('确认对话框按钮未找到，将延迟绑定...');
                 return false;
             }
 
             // 直接绑定事件，不使用 cloneNode
             confirmBtn.addEventListener('click', async () => {
                 console.log('=== 确认删除按钮被点击 ===');
-                console.log('pendingDeleteCard:', pendingDeleteCard);
+                console.log('pendingDeleteCardId:', pendingDeleteCardId);
                 console.log('pendingDeleteIndex:', pendingDeleteIndex);
 
-                if (pendingDeleteCard !== null && pendingDeleteIndex !== null) {
+                if (pendingDeleteCardId !== null && pendingDeleteIndex !== null) {
                     const dialog = document.getElementById('deleteConfirmDialog');
-                    await deleteCardImage(pendingDeleteCard, pendingDeleteIndex);
+                    // 通过cardId获取card元素
+                    const card = document.querySelector(`.card[data-card-id="${pendingDeleteCardId}"]`);
+                    if (card) {
+                        await deleteCardImage(card, pendingDeleteIndex);
+                    } else {
+                        alert('找不到要删除的卡片，请刷新页面重试。');
+                    }
                     dialog.classList.remove('show');
                     // 清除全局变量
-                    pendingDeleteCard = null;
+                    pendingDeleteCardId = null;
                     pendingDeleteIndex = null;
                 } else {
                     alert('删除信息丢失，请重新选择要删除的图片。');
@@ -2048,26 +2058,38 @@
                 const dialog = document.getElementById('deleteConfirmDialog');
                 dialog.classList.remove('show');
                 // 清除全局变量
-                pendingDeleteCard = null;
+                pendingDeleteCardId = null;
                 pendingDeleteIndex = null;
             });
 
             deleteDialogEventsBound = true;
-            console.log('删除对话框事件绑定完成（只绑定一次）');
-            console.log('绑定状态: confirmBtn事件数:', confirmBtn.onclick ? '有onclick' : '无onclick');
+            console.log('✅ 删除对话框事件绑定完成');
             return true;
         }
 
-        // 在页面加载时绑定事件（确保DOM完全加载）
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', bindDeleteDialogEvents);
-        } else if (document.readyState === 'interactive') {
-            // DOM还在解析中，等待加载完成
-            document.addEventListener('DOMContentLoaded', bindDeleteDialogEvents);
-        } else {
-            // DOM已经完全加载，立即绑定
-            bindDeleteDialogEvents();
+        // 多重策略确保事件绑定成功
+        function ensureDeleteDialogEventsBound() {
+            if (deleteDialogEventsBound) return;
+
+            // 策略1: 如果DOM已完成，立即绑定
+            if (document.readyState === 'complete') {
+                bindDeleteDialogEvents();
+            }
+            // 策略2: 如果DOM正在加载，等待完成
+            else if (document.readyState === 'interactive' || document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(bindDeleteDialogEvents, 100); // 延迟100ms确保DOM完全渲染
+                });
+            }
         }
+
+        // 立即尝试绑定
+        ensureDeleteDialogEventsBound();
+
+        // 在页面完全加载后再次尝试绑定（防御性编程）
+        window.addEventListener('load', () => {
+            setTimeout(bindDeleteDialogEvents, 200);
+        });
 
         /**
          * 显示删除确认对话框
@@ -2076,9 +2098,20 @@
          */
         function showDeleteConfirm(card, imageIndex) {
             console.log('showDeleteConfirm 被调用，图片索引:', imageIndex);
+            console.log('card element:', card);
+
+            // 获取并存储cardId（而不是DOM元素引用）
+            const cardId = card.getAttribute('data-card-id');
+            console.log('cardId:', cardId);
+
+            if (!cardId) {
+                console.error('无法获取cardId！');
+                alert('无法识别要删除的卡片，请刷新页面重试。');
+                return;
+            }
 
             // 存储到全局变量
-            pendingDeleteCard = card;
+            pendingDeleteCardId = cardId;
             pendingDeleteIndex = imageIndex;
 
             const dialog = document.getElementById('deleteConfirmDialog');
@@ -2091,7 +2124,7 @@
 
             // 显示对话框
             dialog.classList.add('show');
-            console.log('删除确认对话框已显示');
+            console.log('删除确认对话框已显示，cardId:', cardId, 'index:', imageIndex);
         }
 
         /**
