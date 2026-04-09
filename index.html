@@ -27,6 +27,65 @@
             margin-bottom: 50px;
         }
 
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-left {
+            flex: 1;
+            text-align: center;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .auth-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px 12px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-name {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
         .header h1 {
             font-size: 2.5rem;
             color: #4a4a4a;
@@ -897,8 +956,16 @@
 
     <!-- 头部 -->
     <header class="header">
-        <h1>✨ 书道心电图 ✨</h1>
-        <p class="subtitle">传承千年墨韵，展现书法之美</p>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>✨ 书道心电图 ✨</h1>
+                <p class="subtitle">传承千年墨韵，展现书法之美</p>
+            </div>
+            <div class="header-right" id="userSection">
+                <button class="auth-btn" id="loginBtn">🔐 登录</button>
+                <button class="auth-btn" id="registerBtn">📝 注册</button>
+            </div>
+        </div>
     </header>
 
     <!-- 编辑提示 -->
@@ -1221,6 +1288,38 @@
         </div>
     </div>
 
+    <!-- 登录对话框 -->
+    <div class="delete-confirm-dialog" id="loginDialog">
+        <div class="delete-confirm-box">
+            <h3>🔐 用户登录</h3>
+            <div style="margin: 20px 0; text-align: left;">
+                <input type="email" id="loginEmail" placeholder="📧 邮箱地址" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+                <input type="password" id="loginPassword" placeholder="🔑 密码" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            <div class="delete-confirm-actions">
+                <button class="delete-confirm-btn cancel" onclick="closeLoginDialog()">取消</button>
+                <button class="delete-confirm-btn confirm" onclick="handleLogin()">登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注册对话框 -->
+    <div class="delete-confirm-dialog" id="registerDialog">
+        <div class="delete-confirm-box">
+            <h3>📝 用户注册</h3>
+            <div style="margin: 20px 0; text-align: left;">
+                <input type="text" id="registerName" placeholder="👤 用户名" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+                <input type="email" id="registerEmail" placeholder="📧 邮箱地址" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+                <input type="password" id="registerPassword" placeholder="🔑 密码（至少6位）" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+                <input type="password" id="registerPasswordConfirm" placeholder="🔑 确认密码" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            <div class="delete-confirm-actions">
+                <button class="delete-confirm-btn cancel" onclick="closeRegisterDialog()">取消</button>
+                <button class="delete-confirm-btn confirm" onclick="handleRegister()">注册</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript代码：处理卡片选择和照片上传 -->
     <script>
         // ==================== 全局变量 ====================
@@ -1244,6 +1343,10 @@
         const CAROUSEL_AUTOPLAY_INTERVAL = 3000;  // 轮播自动播放间隔（毫秒）
         const MAX_IMAGES_PER_CARD = 10;  // 每个卡片最多图片数量
 
+        // ==================== 用户认证相关变量 ====================
+        let currentUser = null;  // 当前登录用户
+        const USER_SESSION_KEY = 'calligraphy_user_session';  // 用户会话localStorage键名
+
         // ==================== Supabase 配置 ====================
         const SUPABASE_URL = 'https://ntxmkxakpbrnuosjahhr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG1reGFrcGJybnVvc2phaGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDIyMDUsImV4cCI6MjA5MTAxODIwNX0.uvXyOpuiMiNup4ErBkCu5WJr2M3f9Xr5flMWCPQswTg';
@@ -1252,6 +1355,277 @@
         // Supabase 状态
         let useSupabase = true;
 
+        // ==================== 用户认证功能 ====================
+
+        /**
+         * 加载用户会话
+         */
+        function loadUserSession() {
+            try {
+                const sessionData = localStorage.getItem(USER_SESSION_KEY);
+                if (sessionData) {
+                    const session = JSON.parse(sessionData);
+                    currentUser = session.user;
+                    console.log('用户已登录:', currentUser);
+                    updateUserUI();
+                }
+            } catch (e) {
+                console.error('加载用户会话失败:', e);
+            }
+        }
+
+        /**
+         * 保存用户会话
+         */
+        function saveUserSession(session) {
+            try {
+                localStorage.setItem(USER_SESSION_KEY, JSON.stringify(session));
+                currentUser = session.user;
+                updateUserUI();
+            } catch (e) {
+                console.error('保存用户会话失败:', e);
+            }
+        }
+
+        /**
+         * 清除用户会话
+         */
+        function clearUserSession() {
+            localStorage.removeItem(USER_SESSION_KEY);
+            currentUser = null;
+            updateUserUI();
+        }
+
+        /**
+         * 更新用户UI显示
+         */
+        function updateUserUI() {
+            const userSection = document.getElementById('userSection');
+            if (!userSection) return;
+
+            if (currentUser) {
+                const userName = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || '用户';
+                userSection.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-name">👤 ${userName}</span>
+                        <button class="auth-btn logout-btn" onclick="handleLogout()">退出</button>
+                    </div>
+                `;
+            } else {
+                userSection.innerHTML = `
+                    <button class="auth-btn" id="loginBtn">🔐 登录</button>
+                    <button class="auth-btn" id="registerBtn">📝 注册</button>
+                `;
+                // 重新绑定按钮事件
+                document.getElementById('loginBtn').onclick = showLoginDialog;
+                document.getElementById('registerBtn').onclick = showRegisterDialog;
+            }
+        }
+
+        /**
+         * 显示登录对话框
+         */
+        function showLoginDialog() {
+            const dialog = document.getElementById('loginDialog');
+            if (dialog) dialog.classList.add('show');
+        }
+
+        /**
+         * 关闭登录对话框
+         */
+        function closeLoginDialog() {
+            const dialog = document.getElementById('loginDialog');
+            if (dialog) dialog.classList.remove('show');
+        }
+
+        /**
+         * 显示注册对话框
+         */
+        function showRegisterDialog() {
+            const dialog = document.getElementById('registerDialog');
+            if (dialog) dialog.classList.add('show');
+        }
+
+        /**
+         * 关闭注册对话框
+         */
+        function closeRegisterDialog() {
+            const dialog = document.getElementById('registerDialog');
+            if (dialog) dialog.classList.remove('show');
+        }
+
+        /**
+         * 处理用户登录
+         */
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                alert('请输入邮箱和密码');
+                return;
+            }
+
+            try {
+                closeLoginDialog();
+
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || '登录失败');
+                }
+
+                // 保存用户信息
+                saveUserSession({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    user: {
+                        id: data.user.id,
+                        email: data.user.email,
+                        user_metadata: data.user.user_metadata || {}
+                    }
+                });
+
+                alert('登录成功！');
+                loadUserImages(); // 加载用户图片
+
+            } catch (error) {
+                alert('登录失败：' + error.message);
+            }
+        }
+
+        /**
+         * 处理用户注册
+         */
+        async function handleRegister() {
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            if (!name || !email || !password) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('密码至少需要6位');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+
+            try {
+                closeRegisterDialog();
+
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        options: {
+                            data: { name }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || '注册失败');
+                }
+
+                // 注册成功后自动登录
+                if (data.access_token) {
+                    saveUserSession(data);
+                    alert(`注册成功！欢迎，${name}！`);
+                }
+
+            } catch (error) {
+                alert('注册失败：' + error.message);
+            }
+        }
+
+        /**
+         * 用户登出
+         */
+        function handleLogout() {
+            clearUserSession();
+            clearAllCards();
+            alert('已退出登录');
+        }
+
+        /**
+         * 加载用户图片
+         */
+        async function loadUserImages() {
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/list?prefix=${currentUser.id}/`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${localStorage.getItem(USER_SESSION_KEY) ? JSON.parse(localStorage.getItem(USER_SESSION_KEY)).access_token : SUPABASE_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('加载图片失败');
+                }
+
+                const data = await response.json();
+                const files = data || [];
+
+                // 按卡片分组
+                const userImages = {};
+                files.forEach(file => {
+                    if (file.name === '.emptyFolderPlaceholder') return;
+                    const match = file.name.match(/^(\d+)\/(.+)$/);
+                    if (match) {
+                        const cardId = match[1];
+                        const fileName = match[2];
+                        if (!userImages[cardId]) userImages[cardId] = [];
+                        userImages[cardId].push({
+                            url: `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${currentUser.id}/${cardId}/${fileName}`,
+                            timestamp: new Date(file.created_at).getTime(),
+                            isCloud: true
+                        });
+                    }
+                });
+
+                // 更新卡片显示
+                Object.keys(userImages).forEach(cardId => {
+                    const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
+                    if (card && userImages[cardId].length > 0) {
+                        createCarousel(card, userImages[cardId]);
+                    }
+                });
+
+                updateStorageInfo();
+
+            } catch (error) {
+                console.error('加载用户图片失败:', error);
+            }
+        }
+
+        // ==================== Supabase 上传功能 ====================
+
         /**
          * 上传文件到 Supabase (使用 REST API)
          * @param {File} file 文件
@@ -1259,16 +1633,24 @@
          * @returns {Promise<Object>} {path, url}
          */
         async function uploadToSupabase(file, cardId) {
+            if (!currentUser) {
+                throw new Error('请先登录');
+            }
+
             const fileExt = file.name.split('.').pop();
-            const fileName = `${cardId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+            const userId = currentUser.id;
+            const fileName = `${userId}/${cardId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
             // 上传路径：bucket_name/file_name
             const uploadPath = `${SUPABASE_BUCKET}/${fileName}`;
 
+            const sessionData = localStorage.getItem(USER_SESSION_KEY);
+            const token = sessionData ? JSON.parse(sessionData).access_token : SUPABASE_KEY;
+
             const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${uploadPath}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': file.type
                 },
                 body: file
@@ -3056,6 +3438,14 @@
         // ==================== 图片上传处理（支持云端和本地）====================
         // 用户选择文件后的处理
         fileInput.addEventListener('change', async function(e) {
+            // 验证用户是否登录
+            if (!currentUser) {
+                alert('请先登录后再上传图片！\n\n点击右上角的"登录"按钮进行登录。');
+                showLoginDialog();
+                fileInput.value = '';
+                return;
+            }
+
             const files = Array.from(e.target.files);  // 获取选择的多个文件
 
             // 验证是否选择了文件
@@ -3187,6 +3577,15 @@
 
         // 页面加载时恢复保存的图片
         window.addEventListener('DOMContentLoaded', async function() {
+            // 初始化用户认证
+            loadUserSession();
+
+            // 绑定登录/注册按钮事件
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            if (loginBtn) loginBtn.onclick = showLoginDialog;
+            if (registerBtn) registerBtn.onclick = showRegisterDialog;
+
             // 尝试从 Supabase 加载图片
             if (useSupabase) {
                 try {
