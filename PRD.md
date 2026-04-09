@@ -209,6 +209,95 @@
 }
 ```
 
+### Supabase Storage 数据组织（v1.03） ⭐ 重要
+
+#### 文件路径格式
+
+```
+calligraphy-images/
+│
+├── {cardId}/{fileName}           ← 演示数据（公共资产）
+│   ├── 1/wangxizhi.jpg
+│   ├── 1/lantingxu.jpg
+│   ├── 2/yanzhenqing.jpg
+│   └── ...
+│
+└── {userId}/{cardId}/{fileName}  ← 用户数据（个人资产）
+    ├── user-abc-123/1/my_work.jpg
+    ├── user-abc-123/2/practice.jpg
+    └── user-xyz-789/1/calligraphy.jpg
+```
+
+#### 数据分类说明
+
+| 数据类型 | 路径格式 | 所属权 | 可见性 | 可删除性 | 说明 |
+|---------|---------|--------|--------|----------|------|
+| **演示数据** | `{cardId}/{fileName}` | 公共 | 所有用户 | 所有用户 | 书法家的代表作品，作为默认展示 |
+| **用户数据** | `{userId}/{cardId}/{fileName}` | 私有 | 仅上传者 | 仅上传者 | 用户个人上传的练习作品 |
+
+#### 和谐共存机制
+
+**读取权限**：
+- ✅ 演示数据：所有用户（包括未登录）都能查看
+- ✅ 用户数据：仅上传者能查看
+- ✅ 同一卡片可以同时显示演示图片和用户图片
+
+**写入权限**：
+- ✅ 上传：所有登录用户都可以上传
+- ✅ 删除：只能删除自己上传的图片（通过路径识别）
+
+**RLS 策略**：
+```sql
+-- 允许所有用户读取所有文件
+CREATE POLICY "Public Read All Files"
+ON storage.objects FOR SELECT
+TO authenticated, anon
+USING (bucket_id = 'calligraphy-images');
+
+-- 允许用户删除自己的文件或演示数据
+CREATE POLICY "Authenticated Delete Own Files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'calligraphy-images'
+    AND (
+        (auth.uid()::text = SPLIT_PART(name, '/', 1))  -- 自己的数据
+        OR SPLIT_PART(name, '/', 1) ~ '^[0-9]+$'      -- 演示数据
+    )
+);
+```
+
+#### 代码实现
+
+```javascript
+// 同时加载演示数据和用户数据
+async function loadUserImages() {
+    // 1. 加载演示数据（前缀为空）
+    const demoResponse = await fetch('list?prefix=');
+
+    // 2. 加载用户专属数据（前缀为 userId）
+    const userResponse = await fetch(`list?prefix=${currentUser.id}/`);
+
+    // 3. 智能合并
+    const allFiles = [...demoFiles, ...userFiles];
+    allFiles.forEach(file => {
+        // 识别路径格式
+        const parts = file.name.split('/');
+        if (parts.length === 2 && parts[0].match(/^\d+$/)) {
+            // 演示数据：{cardId}/{fileName}
+        } else if (parts[0] === currentUser.id) {
+            // 用户数据：{userId}/{cardId}/{fileName}
+        }
+    });
+}
+```
+    "age": "303年-361年（东晋）",
+    "styleTitle": "风格传承",
+    "styleDesc": "书圣，承钟繇、卫铄之法，创\"王体\"行书..."
+  }
+}
+```
+
 ---
 
 ## 用户操作流程
@@ -242,29 +331,93 @@
 
 ## 版本历史
 
-### v1.03.0 (2026-04-09) - 用户认证系统 ✨ 当前版本
+### v1.03.0 (2026-04-09) - 用户认证系统 ✨
 
+#### 新增功能
 - ✨ 新增用户注册功能（邮箱+密码）
 - ✨ 新增用户登录功能（Supabase Auth）
 - ✨ 新增用户数据隔离（每个用户只能看到自己的图片）
 - ✨ 新增登录状态持久化（localStorage）
 - ✨ 新增用户专属图片目录（{userId}/{cardId}/{fileName}）
 - 🎨 优化 UI：登录后显示用户名和退出按钮
+
+#### 开发经验
 - 🔧 回退到稳定版本（v1.02.1）后重新实现，避免累积问题
 - 🔧 使用 HTML onclick 属性代替事件监听器，提高可靠性
 
-**开发经验教训**：
-- ❌ 不要在破损的代码基础上迭代，问题会累积
-- ✅ 回退到工作的版本是最高效的调试方法
-- ❌ 避免在 DOM 加载前获取元素（会返回 null）
-- ✅ 使用简单的方式（HTML onclick）往往比复杂的 addEventListener 更可靠
-- ✅ 最小化修改范围，降低引入新问题的风险
+#### 问题与解决方案（详细清单）
 
-**问题根源分析**：
-1. 在已有问题的版本上继续添加新功能
-2. 将 `const` 改为 `let` 后，代码在 DOMContentLoaded 外执行导致变量为 null
-3. 事件绑定代码位置错误，DOM 未加载完成就尝试绑定
-4. 代码重复导致结构混乱，执行失败后中断整个脚本
+| # | 问题 | 症状 | 根本原因 | 解决方案 |
+|---|------|------|----------|----------|
+| 1 | 所有按钮失效 | 点击无反应 | 在破损代码上迭代修改 | 回退到工作版本重新实现 |
+| 2 | DOM 元素为 null | `getElementById` 返回 null | 代码在 DOM 加载前执行 | 移到 DOMContentLoaded 内部 |
+| 3 | 事件绑定失效 | 替换 HTML 后按钮不工作 | 事件监听器未重新绑定 | 使用 HTML onclick 属性 |
+| 4 | 脚本执行中断 | 部分功能不工作 | 代码重复导致结构混乱 | 删除重复代码 |
+| 5 | 演示数据不可见 | 登录后看不到默认图片 | 只查询 `{userId}/` 前缀 | 同时加载演示和用户数据 |
+| 6 | RLS 策略阻止访问 | Storage 拒绝读取请求 | 策略限制过于严格 | 修改为宽松策略 |
+
+**详细问题分析**：
+
+**问题 1：在破损代码基础上迭代**
+```
+症状：添加新功能后原有功能失效，按钮点击无反应
+原因：在已有问题的版本上继续修改，问题累积
+解决：git reset --hard <working-commit> 回退到稳定版本
+```
+
+**问题 2：DOM 元素获取返回 null**
+```javascript
+// ❌ 错误：在 script 开始时获取
+const uploadBtn = document.getElementById('uploadBtn');  // null
+
+// ✅ 正确：在 DOMContentLoaded 内获取
+window.addEventListener('DOMContentLoaded', () => {
+    const uploadBtn = document.getElementById('uploadBtn');
+});
+```
+
+**问题 3：事件绑定失效**
+```javascript
+// ❌ 错误：动态替换 HTML 后事件丢失
+element.innerHTML = '<button id="btn">点击</button>';
+// 之前绑定的事件丢失了
+
+// ✅ 正确：使用 onclick 属性
+element.innerHTML = '<button onclick="handleClick()">点击</button>';
+```
+
+**问题 4：代码重复和结构混乱**
+```javascript
+// ❌ 错误：同样的代码在两个地方
+// 第 3667 行：DOMContentLoaded 之外
+cards.forEach(...);  // cards 是 null
+
+// 第 3922 行：DOMContentLoaded 之内
+cards.forEach(...);  // 正确位置
+
+// ✅ 正确：删除重复代码，只保留在正确位置
+```
+
+**问题 5：演示数据不可见**
+```javascript
+// ❌ 错误：只查询用户专属目录
+const response = await fetch(`list?prefix=${currentUser.id}/`);
+
+// ✅ 正确：同时查询演示数据和用户数据
+const demoResponse = await fetch('list?prefix=');  // 演示数据
+const userResponse = await fetch(`list?prefix=${currentUser.id}/`);  // 用户数据
+```
+
+**问题 6：RLS 策略阻止访问**
+```sql
+-- ❌ 错误：限制只能查看自己的数据
+USING (auth.uid() = user_id)
+
+-- ✅ 正确：允许查看演示数据（user_id IS NULL）
+USING (user_id = auth.uid() OR user_id IS NULL)
+```
+
+---
 
 ### v1.02.1 (2026-04-08) - 删除功能修复版本
 
@@ -430,6 +583,160 @@ function handleClick() {
     }
 }
 ```
+
+---
+
+## 演示数据与用户数据共存机制 ⭐ v1.03
+
+### 设计理念
+
+在 v1.03 版本中，我们引入了用户认证系统，但同时保留了对演示数据的支持。这样新用户可以看到精美的书法作品，同时也可以上传自己的练习作品。
+
+### 存储结构对比
+
+#### v1.02 版本（无用户系统）
+```
+calligraphy-images/
+├── 1/wangxizhi.jpg       ← 所有用户共享
+├── 1/lantingxu.jpg       ← 所有用户共享
+├── 2/yanzhenqing.jpg     ← 所有用户共享
+└── ...
+```
+
+#### v1.03 版本（有用户系统）
+```
+calligraphy-images/
+├── 1/wangxizhi.jpg              ← 演示数据（公共资产）
+├── 1/lantingxu.jpg              ← 所有用户可见
+├── 2/yanzhenqing.jpg            ← 所有用户可见
+│
+├── user-abc-123/1/my_work.jpg   ← 用户 A 的数据
+├── user-abc-123/2/practice.jpg   ← 仅用户 A 可见
+│
+└── user-xyz-789/1/calligraphy.jpg ← 用户 B 的数据
+    └── user-xyz-789/3/art.jpg      ← 仅用户 B 可见
+```
+
+### 数据访问规则详解
+
+#### 未登录用户
+| 数据类型 | 能否查看 | 能否删除 | 说明 |
+|---------|---------|---------|------|
+| 演示数据 | ✅ 能 | ✅ 能 | 默认展示的书法作品 |
+| 用户数据 | ❌ 不能 | ❌ 不能 | 需要登录才能查看 |
+
+#### 用户 A 登录后
+| 数据类型 | 能否查看 | 能否删除 | 说明 |
+|---------|---------|---------|------|
+| 演示数据 | ✅ 能 | ✅ 能 | 公共资产，可删除 |
+| 用户 A 的数据 | ✅ 能 | ✅ 能 | 自己上传的图片 |
+| 用户 B 的数据 | ❌ 不能 | ❌ 不能 | 其他用户的私有数据 |
+
+### RLS 策略配置
+
+#### 问题场景
+如果 RLS 策略配置不当，会出现以下问题：
+
+1. **演示数据被隐藏**：
+   - 症状：登录后看不到默认的书法作品
+   - 原因：策略限制为 `auth.uid() = user_id`，但演示数据没有 user_id
+   - 解决：允许 `user_id IS NULL` 的数据被查看
+
+2. **Storage 拒绝访问**：
+   - 症状：API 返回 401/403 错误
+   - 原因：Storage 策略只允许访问特定前缀
+   - 解决：创建宽松的读取策略
+
+#### 正确的 RLS 策略配置
+
+```sql
+-- ❌ 错误：过于严格的策略
+CREATE POLICY "Users can view their own images"
+ON storage.objects FOR SELECT
+USING (auth.uid() = SPLIT_PART(name, '/', 1));
+-- 问题：演示数据路径为 "1/file.jpg"，不匹配用户 ID
+
+-- ✅ 正确：宽松的读取策略
+CREATE POLICY "Public Read All Files"
+ON storage.objects FOR SELECT
+TO authenticated, anon
+USING (bucket_id = 'calligraphy-images');
+-- 允许：所有用户读取所有文件
+
+-- ✅ 正确：受控的删除策略
+CREATE POLICY "Authenticated Delete Own Files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'calligraphy-images'
+    AND (
+        (auth.uid()::text = SPLIT_PART(name, '/', 1))  -- 自己的文件
+        OR SPLIT_PART(name, '/', 1) ~ '^[0-9]+$'      -- 演示文件
+    )
+);
+```
+
+### 代码实现要点
+
+#### 路径格式识别
+```javascript
+// 识别两种路径格式
+const parts = file.name.split('/');
+
+if (parts.length === 2 && parts[0].match(/^\d+$/)) {
+    // 演示数据："1/wangxizhi.jpg"
+    cardId = parts[0];
+    isDemo = true;
+} else if (parts[0] === currentUser.id) {
+    // 用户数据："user-abc-123/1/my_work.jpg"
+    cardId = parts[1];
+    isDemo = false;
+}
+```
+
+#### 合并显示逻辑
+```javascript
+// 同一卡片可以显示多种数据源
+const cardImages = [
+    ...demoData[cardId],   // 演示图片
+    ...userData[cardId]    // 用户图片
+];
+// 去重后显示
+createCarousel(card, cardImages);
+```
+
+### 用户体验
+
+1. **首次访问（未登录）**：
+   - 看到：精美的书法作品（演示数据）
+   - 鼓励：注册后可以上传自己的作品
+
+2. **注册登录后**：
+   - 看到：演示数据 + 自己上传的图片
+   - 可以：上传、删除自己的图片
+
+3. **图片展示**：
+   - 卡片 1 = 演示图片（兰亭序） + 用户 A 的作品 + 用户 B 的作品
+   - 每个人只能删除自己上传的部分
+   - 演示图片保持不变（公共资产）
+
+### 数据迁移建议
+
+如果之前有旧版本的图片数据：
+
+1. **保留旧数据**：不要删除演示数据
+2. **添加新数据**：新上传的图片使用新路径格式
+3. **逐步迁移**：如果需要，可以给旧数据添加标记
+
+### 测试清单
+
+- [ ] 未登录用户能看到演示数据
+- [ ] 未登录用户不能看到用户数据
+- [ ] 登录后能看到演示数据 + 自己的数据
+- [ ] 登录后不能看到其他用户的数据
+- [ ] 可以删除演示数据（公共资产）
+- [ ] 只能删除自己上传的数据
+- [ ] RLS 策略不会阻止正常访问
 
 ---
 
