@@ -242,7 +242,31 @@
 
 ## 版本历史
 
-### v1.02.1 (2026-04-08) - 删除功能修复版本 ✨ 当前版本
+### v1.03.0 (2026-04-09) - 用户认证系统 ✨ 当前版本
+
+- ✨ 新增用户注册功能（邮箱+密码）
+- ✨ 新增用户登录功能（Supabase Auth）
+- ✨ 新增用户数据隔离（每个用户只能看到自己的图片）
+- ✨ 新增登录状态持久化（localStorage）
+- ✨ 新增用户专属图片目录（{userId}/{cardId}/{fileName}）
+- 🎨 优化 UI：登录后显示用户名和退出按钮
+- 🔧 回退到稳定版本（v1.02.1）后重新实现，避免累积问题
+- 🔧 使用 HTML onclick 属性代替事件监听器，提高可靠性
+
+**开发经验教训**：
+- ❌ 不要在破损的代码基础上迭代，问题会累积
+- ✅ 回退到工作的版本是最高效的调试方法
+- ❌ 避免在 DOM 加载前获取元素（会返回 null）
+- ✅ 使用简单的方式（HTML onclick）往往比复杂的 addEventListener 更可靠
+- ✅ 最小化修改范围，降低引入新问题的风险
+
+**问题根源分析**：
+1. 在已有问题的版本上继续添加新功能
+2. 将 `const` 改为 `let` 后，代码在 DOMContentLoaded 外执行导致变量为 null
+3. 事件绑定代码位置错误，DOM 未加载完成就尝试绑定
+4. 代码重复导致结构混乱，执行失败后中断整个脚本
+
+### v1.02.1 (2026-04-08) - 删除功能修复版本
 
 - 🔧 完全重写删除功能，使用CSS hover显示删除按钮
 - 🔧 使用原生confirm对话框，简化用户操作流程
@@ -330,15 +354,143 @@
 - ✅ 卡片信息编辑
 - ✅ 图片删除功能（悬停显示×按钮）
 - ✅ 删除确认对话框（选择删除本地或本地+云端）
-- ✅ **Supabase 云存储**
-- ✅ **多用户图片共享**
-- ✅ **云端图片自动同步**
+- ✅ Supabase 云存储
+- ✅ **用户注册/登录系统**
+- ✅ **用户数据隔离（每个用户只能管理自己的图片）**
+- ✅ **登录状态持久化**
 
 ---
 
 ## 待修复问题 ⚠️
 
-- ⚠️ 无
+- ⚠️ 无（所有核心功能已完成）
+
+---
+
+## 开发经验总结 💡
+
+### 问题：在破损代码基础上迭代导致更多问题
+
+**症状**：
+- 添加新功能后原有功能失效
+- 按钮点击无反应
+- 无法定位具体问题原因
+
+**根本原因**：
+1. 在已有问题的版本上继续修改
+2. 问题累积，越来越复杂
+3. 修改引入新问题，形成恶性循环
+
+**解决方案**：
+```bash
+# 回退到最后工作的版本
+git log --oneline -10  # 查看提交历史
+git reset --hard <working-commit>  # 回退
+
+# 在稳定基础上重新实现
+git add -A
+git commit -m "feat: 重新实现功能"
+```
+
+---
+
+### 问题：DOM 元素获取返回 null
+
+**症状**：
+```javascript
+const uploadBtn = document.getElementById('uploadBtn');
+console.log(uploadBtn);  // null
+uploadBtn.addEventListener(...);  // 报错
+```
+
+**根本原因**：
+- 代码在 `<script>` 标签开始时立即执行
+- 此时 DOM 还未加载完成
+- 所有 `getElementById` 都返回 `null`
+
+**解决方案**：
+```javascript
+// ❌ 错误：在 script 标签开始时执行
+<script>
+const uploadBtn = document.getElementById('uploadBtn');  // null
+</script>
+
+// ✅ 正确：在 DOMContentLoaded 内执行
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    const uploadBtn = document.getElementById('uploadBtn');  // 正确获取
+});
+</script>
+
+// ✅ 更好：在需要时才获取（函数内）
+function handleClick() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener(...);
+    }
+}
+```
+
+---
+
+### 问题：事件绑定失效
+
+**症状**：
+```javascript
+btn.onclick = handleClick;
+// 动态替换 HTML 后事件失效
+btn.innerHTML = '<button onclick="handleClick()">点击</button>';  // 不工作
+```
+
+**根本原因**：
+- 替换 HTML 后，新元素需要重新绑定事件
+- 使用 `addEventListener` 绑定的旧元素已被移除
+
+**解决方案**：
+```javascript
+// ✅ 方案 1：使用 HTML onclick 属性（最简单）
+element.innerHTML = '<button onclick="handleClick()">点击</button>';
+
+// ✅ 方案 2：替换 HTML 后重新绑定
+element.innerHTML = '<button id="myBtn">点击</button>';
+document.getElementById('myBtn').onclick = handleClick;
+
+// ✅ 方案 3：使用事件委托（最可靠）
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'myBtn') {
+        handleClick();
+    }
+});
+```
+
+---
+
+### 调试技巧
+
+**1. 检查元素是否存在**：
+```javascript
+const btn = document.getElementById('myBtn');
+console.log('Button:', btn);  // 检查是否为 null
+```
+
+**2. 检查事件是否绑定**：
+```javascript
+console.log('Onclick:', btn.onclick);  // 应该看到函数
+```
+
+**3. 使用 try-catch 捕获错误**：
+```javascript
+try {
+    btn.addEventListener('click', handler);
+} catch (error) {
+    console.error('绑定失败:', error);
+}
+```
+
+**4. 分步骤测试**：
+- 先测试基础功能（按钮点击）
+- 再测试复杂功能（异步请求）
+- 最后测试集成功能（完整流程）
 
 ---
 
