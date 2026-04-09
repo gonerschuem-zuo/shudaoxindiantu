@@ -9,6 +9,54 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
     <style>
+        /* ==================== 设计系统变量 ==================== */
+        :root {
+            /* 主色调 */
+            --color-primary: #1a1a2e;
+            --color-secondary: #c9a96e;
+            --color-accent: #e85d75;
+            --color-bg: #fafafa;
+            --color-bg-alt: #f5f5f7;
+            --color-text: #1a1a2e;
+            --color-text-secondary: rgba(26, 26, 46, 0.65);
+            --color-border: rgba(0, 0, 0, 0.08);
+
+            /* 渐变 */
+            --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+            --gradient-card-hover: linear-gradient(145deg, rgba(255,255,255,1) 0%, rgba(250,250,252,0.96) 100%);
+            --gradient-primary: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+            --gradient-primary-hover: linear-gradient(135deg, #2d2d44 0%, #3d3d54 100%);
+            --gradient-accent: linear-gradient(135deg, #e85d75 0%, #ff7a8c 100%);
+            --gradient-secondary: linear-gradient(135deg, #c9a96e 0%, #b8945d 100%);
+            --gradient-success: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            --gradient-warning: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            --gradient-danger: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            --gradient-info: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+
+            /* 阴影 */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.04);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.08), 0 16px 32px rgba(0,0,0,0.04);
+            --shadow-xl: 0 8px 24px rgba(0,0,0,0.10), 0 24px 48px rgba(0,0,0,0.06);
+
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-2xl: 24px;
+            --radius-full: 50%;
+
+            /* 过渡 */
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --transition-slow: 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+            /* 字体 */
+            --font-heading: 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', serif;
+            --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,15 +64,17 @@
         }
 
         body {
-            font-family: 'Noto Serif SC', 'SimSun', serif;
-            background: linear-gradient(135deg, #e8e8e8 0%, #d8d8d8 50%, #e0e0e0 100%);
+            font-family: var(--font-body);
+            background: linear-gradient(180deg, #fafafa 0%, #f5f5f7 50%, #ebebeb 100%);
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 48px 24px;
+            color: var(--color-text);
+            line-height: 1.6;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 64px;
         }
 
         .header-content {
@@ -43,81 +93,111 @@
 
         .header-right {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .auth-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-primary);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 15px;
+            padding: 10px 20px;
+            border-radius: var(--radius-lg);
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+            transition: all var(--transition-normal);
+            box-shadow: 0 2px 8px rgba(26, 26, 46, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .auth-btn:active::after {
+            width: 300px;
+            height: 300px;
         }
 
         .auth-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(26, 26, 46, 0.2);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 6px 12px;
-            border-radius: 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
 
         .user-name {
-            color: #667eea;
+            color: var(--color-primary);
             font-weight: 600;
             font-size: 13px;
         }
 
         .logout-btn {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-            padding: 6px 12px;
+            background: var(--gradient-danger);
+            padding: 6px 14px;
             font-size: 12px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            color: #4a4a4a;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 10px;
+            font-family: var(--font-heading);
+            font-size: 2.75rem;
+            color: var(--color-primary);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
         }
 
         .header .subtitle {
-            font-size: 1.1rem;
-            color: #6a6a6a;
-            font-style: italic;
+            font-size: 1.125rem;
+            color: var(--color-text-secondary);
+            font-weight: 400;
         }
 
         .card-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 32px;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 16px;
         }
 
         .card {
-            background: linear-gradient(145deg, #f8f8f8 0%, #f0f0f0 100%);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(100, 100, 100, 0.15),
-                        0 5px 15px rgba(100, 100, 100, 0.1);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 2px solid #d0d0d0;
+            background: var(--gradient-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-2xl);
+            padding: 32px 28px 28px 28px;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-slow);
+            border: 1px solid rgba(255,255,255,0.9);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .card::before {
@@ -126,263 +206,342 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #888, #666, #888);
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--color-secondary) 20%,
+                var(--color-accent) 50%,
+                var(--color-secondary) 80%,
+                transparent 100%);
+            opacity: 0.85;
         }
 
         .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(100, 100, 100, 0.25),
-                        0 10px 25px rgba(100, 100, 100, 0.15);
+            transform: translateY(-8px) scale(1.015);
+            box-shadow: var(--shadow-xl);
+            border-color: rgba(201, 169, 110, 0.25);
         }
 
         .card-image {
             width: 100%;
-            height: 220px;
-            background: linear-gradient(135deg, #888 0%, #666 100%);
-            border-radius: 15px;
+            height: 240px;
+            background: linear-gradient(135deg, #f5f5f7 0%, #ebebeb 100%);
+            border-radius: var(--radius-xl);
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
         }
 
         .card-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s ease;
+            transition: all var(--transition-slow);
         }
 
         .card:hover .card-image img {
-            transform: scale(1.1);
+            transform: scale(1.06);
+            filter: brightness(1.03) contrast(1.02);
         }
 
         .card-placeholder {
             font-size: 4rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: bold;
+            color: rgba(0, 0, 0, 0.15);
+            font-weight: 600;
         }
 
         .card-name {
             font-size: 1.5rem;
-            color: #4a4a4a;
+            color: var(--color-text);
             margin-bottom: 10px;
-            font-weight: bold;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .card-name .icon {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
         }
 
         .card-age {
             display: inline-block;
-            background: linear-gradient(135deg, #888, #666);
+            background: var(--gradient-secondary);
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            margin-bottom: 16px;
             font-weight: 500;
+            box-shadow: 0 2px 8px rgba(201, 169, 110, 0.25);
         }
 
         .card-style {
-            color: #5a5a5a;
+            color: var(--color-text-secondary);
             font-size: 1rem;
-            line-height: 1.8;
-            padding: 15px;
-            background: rgba(128, 128, 128, 0.1);
-            border-radius: 12px;
-            border-left: 4px solid #888;
+            line-height: 1.7;
+            padding: 16px;
+            background: rgba(26, 26, 46, 0.04);
+            border-radius: var(--radius-lg);
+            border-left: 3px solid var(--color-secondary);
         }
 
         .card-style-title {
-            font-weight: bold;
-            color: #666;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 6px;
+            font-size: 0.875rem;
         }
 
         .footer {
             text-align: center;
-            margin-top: 50px;
-            color: #6a6a6a;
-            font-size: 0.9rem;
+            margin-top: 48px;
+            margin-bottom: 20px;
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
         }
 
         .footer .heart {
-            color: #888;
+            color: var(--color-accent);
         }
 
         /* 装饰印章 */
         .seal {
             position: absolute;
-            bottom: 15px;
-            right: 15px;
-            width: 50px;
-            height: 50px;
-            border: 3px solid #c44;
-            border-radius: 8px;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border: 2.5px solid var(--color-accent);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
-            color: #c44;
-            font-weight: bold;
+            font-family: var(--font-heading);
+            font-size: 0.75rem;
+            color: var(--color-accent);
+            font-weight: 600;
             writing-mode: vertical-rl;
+            letter-spacing: 0.1em;
             opacity: 0.7;
             transform: rotate(-5deg);
+            box-shadow: inset 0 0 0 1px rgba(232, 93, 117, 0.15), 0 2px 8px rgba(232, 93, 117, 0.12);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .card:hover .seal {
+            opacity: 0.9;
+            transform: rotate(-3deg) scale(1.05);
+            box-shadow: inset 0 0 0 1px rgba(232, 93, 117, 0.25), 0 4px 16px rgba(232, 93, 117, 0.2);
         }
 
         /* 水墨装饰 */
         .ink-decoration {
             position: fixed;
-            width: 200px;
-            height: 200px;
-            opacity: 0.03;
+            width: 400px;
+            height: 400px;
+            opacity: 0.04;
             pointer-events: none;
             z-index: -1;
+            filter: blur(80px);
         }
 
         .ink-decoration.top-left {
-            top: 0;
-            left: 0;
-            background: radial-gradient(circle at center, #000 0%, transparent 70%);
+            top: -150px;
+            left: -150px;
+            background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
         }
 
         .ink-decoration.bottom-right {
-            bottom: 0;
-            right: 0;
-            background: radial-gradient(circle at center, #000 0%, transparent 70%);
+            bottom: -150px;
+            right: -150px;
+            background: radial-gradient(circle, var(--color-secondary) 0%, transparent 70%);
         }
 
         /* 响应式设计 */
         @media (max-width: 768px) {
+            body {
+                padding: 32px 16px 16px 16px;
+            }
+
             .header h1 {
-                font-size: 1.8rem;
+                font-size: 2rem;
+            }
+
+            .header .subtitle {
+                font-size: 1rem;
             }
 
             .card-container {
                 grid-template-columns: 1fr;
-                gap: 25px;
+                gap: 24px;
             }
 
             .card {
-                padding: 20px;
+                padding: 24px 20px;
             }
 
             .card-image {
-                height: 180px;
+                height: 200px;
+            }
+
+            /* 移动端底部上传区域优化 */
+            .upload-section {
+                padding: 10px 0;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+
+            .upload-controls {
+                gap: 4px;
+            }
+
+            .upload-btn, .clear-btn, .edit-btn, .refresh-btn, .reset-defaults-btn {
+                padding: 5px 10px;
+                font-size: 0.6875rem;
+                flex: 0 0 auto;
+                min-width: auto;
+                justify-content: center;
+            }
+
+            .storage-info {
+                font-size: 0.625rem;
+                padding: 3px 8px;
             }
         }
 
         /* 上传按钮样式 */
         .upload-section {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 8px;
+            background: transparent;
+            padding: 12px 0;
+            margin-top: 24px;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .upload-controls {
             display: flex;
-            gap: 15px;
+            gap: 6px;
             align-items: center;
             flex-wrap: wrap;
             justify-content: center;
         }
 
-        .upload-btn, .clear-btn {
-            background: linear-gradient(135deg, #888, #666);
+        .upload-btn, .clear-btn, .edit-btn, .refresh-btn, .reset-defaults-btn {
+            background: var(--gradient-primary);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1rem;
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+            transition: all var(--transition-normal);
+            box-shadow: 0 1px 4px rgba(26, 26, 46, 0.1);
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .upload-btn:hover, .clear-btn:hover {
-            background: linear-gradient(135deg, #666, #444);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(100, 100, 100, 0.4);
+        .upload-btn:hover, .clear-btn:hover, .edit-btn:hover, .refresh-btn:hover, .reset-defaults-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(26, 26, 46, 0.15);
         }
 
-        .upload-btn:disabled, .clear-btn:disabled {
-            background: #aaa;
+        .upload-btn:active, .clear-btn:active, .edit-btn:active, .refresh-btn:active, .reset-defaults-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .upload-btn:disabled, .clear-btn:disabled, .edit-btn:disabled, .refresh-btn:disabled, .reset-defaults-btn:disabled {
+            background: #ccc;
             cursor: not-allowed;
             transform: none;
+            opacity: 0.6;
         }
 
         .clear-btn {
-            background: linear-gradient(135deg, #c44, #a33);
+            background: var(--gradient-danger);
         }
 
-        .clear-btn:hover {
-            background: linear-gradient(135deg, #a33, #822);
+        .edit-btn {
+            background: var(--gradient-success);
+        }
+
+        .refresh-btn {
+            background: var(--gradient-info);
+        }
+
+        .reset-defaults-btn {
+            background: var(--gradient-warning);
         }
 
         /* 存储信息显示 */
         .storage-info {
-            font-size: 0.85rem;
-            color: #666;
-            background: rgba(128, 128, 128, 0.1);
-            padding: 8px 15px;
-            border-radius: 15px;
+            font-size: 0.6875rem;
+            color: var(--color-text-secondary);
+            background: rgba(26, 26, 46, 0.04);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+            border: 1px solid var(--color-border);
+            max-width: 280px;
         }
 
         .storage-info.warning {
-            background: rgba(255, 152, 0, 0.2);
+            background: rgba(255, 152, 0, 0.12);
             color: #e65100;
+            border-color: rgba(255, 152, 0, 0.2);
         }
 
         .storage-info.error {
-            background: rgba(244, 67, 54, 0.2);
+            background: rgba(244, 67, 54, 0.12);
             color: #c62828;
+            border-color: rgba(244, 67, 54, 0.2);
         }
 
         /* 卡片选中状态 */
         .card.selected {
-            border: 3px solid #666;
-            box-shadow: 0 15px 40px rgba(100, 100, 100, 0.35);
+            border: 2px solid var(--color-primary);
+            box-shadow: 0 8px 32px rgba(26, 26, 46, 0.15);
         }
 
         .card .select-hint {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(102, 102, 102, 0.9);
+            top: 12px;
+            left: 12px;
+            background: rgba(26, 26, 46, 0.92);
             color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+            opacity: 1;
+            transition: all var(--transition-normal);
             pointer-events: none;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .card:hover .select-hint {
             opacity: 1;
+            transform: scale(1.05);
         }
 
         .card.selected .select-hint {
-            background: #4CAF50;
+            background: var(--gradient-success);
             opacity: 1;
         }
 
@@ -395,7 +554,7 @@
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(32px);
             }
             to {
                 opacity: 1;
@@ -404,16 +563,15 @@
         }
 
         .card {
-            animation: fadeInUp 0.6s ease-out forwards;
-            cursor: pointer;
+            animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
 
-        .card:nth-child(1) { animation-delay: 0.1s; }
-        .card:nth-child(2) { animation-delay: 0.2s; }
-        .card:nth-child(3) { animation-delay: 0.3s; }
-        .card:nth-child(4) { animation-delay: 0.4s; }
-        .card:nth-child(5) { animation-delay: 0.5s; }
-        .card:nth-child(6) { animation-delay: 0.6s; }
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+        .card:nth-child(4) { animation-delay: 0.2s; }
+        .card:nth-child(5) { animation-delay: 0.25s; }
+        .card:nth-child(6) { animation-delay: 0.3s; }
 
         /* 轮播图样式 */
         .carousel-container {
@@ -421,14 +579,14 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            border-radius: 15px;
+            border-radius: var(--radius-xl);
         }
 
         .carousel-slides {
             display: flex;
             width: 100%;
             height: 100%;
-            transition: transform 0.5s ease-in-out;
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .carousel-slide {
@@ -444,26 +602,29 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: all var(--transition-slow);
         }
 
         .carousel-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            color: var(--color-text);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            transition: all 0.3s ease;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             z-index: 10;
             opacity: 0;
+            cursor: pointer;
         }
 
         .card:hover .carousel-nav {
@@ -471,55 +632,69 @@
         }
 
         .carousel-nav:hover {
-            background: rgba(0, 0, 0, 0.8);
-            transform: translateY(-50%) scale(1.1);
+            transform: translateY(-50%) scale(1.12);
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .carousel-nav:active {
+            transform: translateY(-50%) scale(1.05);
         }
 
         .carousel-nav.prev {
-            left: 10px;
+            left: 12px;
         }
 
         .carousel-nav.next {
-            right: 10px;
+            right: 12px;
         }
 
         .carousel-indicators {
             position: absolute;
-            bottom: 10px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             gap: 8px;
             z-index: 10;
-            background: rgba(0, 0, 0, 0.5);
             padding: 6px 12px;
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-full);
         }
 
         .carousel-indicator {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.4);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .carousel-indicator:hover {
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(1.25);
         }
 
         .carousel-indicator.active {
+            width: 24px;
+            border-radius: 4px;
             background: white;
-            transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         }
 
         .carousel-counter {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.6);
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
             color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: var(--radius-lg);
+            font-size: 0.75rem;
+            font-weight: 600;
             z-index: 10;
         }
 
@@ -538,54 +713,26 @@
         /* 编辑功能样式 */
         .edit-section {
             text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .edit-btn {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .edit-btn:hover {
-            background: linear-gradient(135deg, #45a049, #3d8b40);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            margin-bottom: 24px;
         }
 
         .edit-btn.active {
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-        }
-
-        .edit-btn.active:hover {
-            background: linear-gradient(135deg, #f57c00, #e65100);
-            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+            background: var(--gradient-warning);
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
         }
 
         /* 编辑模式下的卡片样式 */
         .card.editing {
-            border: 3px solid #4CAF50;
-            box-shadow: 0 15px 50px rgba(76, 175, 80, 0.3);
-            transform: scale(1.02);
+            border: 2px solid #4CAF50;
+            box-shadow: 0 12px 40px rgba(76, 175, 80, 0.2);
+            transform: scale(1.01);
         }
 
         .card.editing .card-image {
-            opacity: 0.5;
+            opacity: 0.45;
             pointer-events: none;
         }
 
-        /* 编辑模式下，删除按钮仍然可点击 */
         .card.editing .carousel-delete-btn {
             pointer-events: auto !important;
         }
@@ -597,26 +744,27 @@
         /* 编辑输入框样式 */
         .edit-input {
             width: 100%;
-            padding: 8px 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-family: 'Noto Serif SC', 'SimSun', serif;
+            padding: 10px 14px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-heading);
             font-size: inherit;
-            color: #333;
+            color: var(--color-text);
             background: white;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
             margin-bottom: 8px;
         }
 
         .edit-input:focus {
             outline: none;
             border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
+            background: #fafafa;
         }
 
         .edit-input.title-input {
-            font-size: 1.3rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 600;
         }
 
         .edit-input.age-input {
@@ -628,31 +776,32 @@
         .edit-textarea {
             width: 100%;
             min-height: 80px;
-            padding: 10px 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-family: 'Noto Serif SC', 'SimSun', serif;
-            font-size: 0.95rem;
+            padding: 12px 14px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-heading);
+            font-size: 0.9375rem;
             line-height: 1.6;
-            color: #333;
+            color: var(--color-text);
             background: white;
             resize: vertical;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
         }
 
         .edit-textarea:focus {
             outline: none;
             border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
+            background: #fafafa;
         }
 
         /* 编辑按钮组 */
         .edit-actions {
             display: none;
-            gap: 10px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--color-border);
         }
 
         .card.editing .edit-actions {
@@ -661,38 +810,40 @@
         }
 
         .action-btn {
-            padding: 8px 20px;
+            padding: 10px 22px;
             border: none;
-            border-radius: 15px;
-            font-size: 0.9rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            position: relative;
+            overflow: hidden;
         }
 
         .save-btn {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
+            background: var(--gradient-success);
             color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
         }
 
         .save-btn:hover {
-            background: linear-gradient(135deg, #45a049, #3d8b40);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.25);
         }
 
         .cancel-btn {
             background: linear-gradient(135deg, #9e9e9e, #757575);
             color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .cancel-btn:hover {
-            background: linear-gradient(135deg, #757575, #616161);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         /* 编辑模式下的显示元素隐藏 */
@@ -700,7 +851,6 @@
             display: none;
         }
 
-        /* 显示模式下的编辑元素隐藏 */
         .edit-mode {
             display: none;
         }
@@ -712,19 +862,19 @@
         /* 编辑提示 */
         .edit-hint {
             position: fixed;
-            top: 20px;
+            top: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(135deg, #4CAF50, #45a049);
+            background: var(--gradient-success);
             color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1rem;
+            padding: 14px 32px;
+            border-radius: var(--radius-full);
+            font-size: 0.9375rem;
             font-weight: 500;
-            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
             z-index: 1000;
             display: none;
-            animation: slideDown 0.3s ease-out;
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .edit-hint.show {
@@ -734,7 +884,7 @@
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
+                transform: translateX(-50%) translateY(-16px);
             }
             to {
                 opacity: 1;
@@ -767,36 +917,39 @@
         /* GIF导出按钮样式 */
         .gif-export-btn {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            color: rgba(255, 255, 255, 0.7);
-            border: none;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 7px 14px;
+            border-radius: var(--radius-lg);
+            font-size: 0.6875rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
             z-index: 20;
             display: none;
             align-items: center;
             gap: 4px;
-            backdrop-filter: blur(2px);
+            letter-spacing: 0.02em;
         }
 
         .gif-export-btn:hover {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.65);
             color: white;
+            transform: translateY(-1px);
         }
 
         .gif-export-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .gif-export-btn.generating {
-            background: rgba(76, 175, 80, 0.6);
+            background: rgba(76, 175, 80, 0.85);
             color: white;
         }
 
@@ -804,7 +957,6 @@
             display: flex;
         }
 
-        /* 单图时不显示导出按钮 */
         .carousel-container.single-image .gif-export-btn {
             display: none !important;
         }
@@ -812,15 +964,16 @@
         /* 删除按钮样式 */
         .carousel-delete-btn {
             position: absolute;
-            top: 8px;
-            left: 8px;
-            width: 32px;
-            height: 32px;
-            background: rgba(244, 67, 54, 0.9);
+            top: 10px;
+            left: 10px;
+            width: 34px;
+            height: 34px;
+            background: rgba(244, 67, 54, 0.95);
+            backdrop-filter: blur(4px);
             color: white;
             border: 2px solid white;
             border-radius: 50%;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -828,17 +981,19 @@
             justify-content: center;
             z-index: 100;
             opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.2s ease;
+            transform: scale(0.85);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             line-height: 1;
             padding: 0;
             margin: 0;
+            box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
         }
 
         .carousel-delete-btn:hover {
             background: rgba(211, 47, 47, 1);
-            transform: scale(1.1);
+            transform: scale(1.15);
             opacity: 1 !important;
+            box-shadow: 0 4px 16px rgba(211, 47, 47, 0.4);
         }
 
         .carousel-slide:hover .carousel-delete-btn {
@@ -846,17 +1001,14 @@
             transform: scale(1);
         }
 
-        /* 编辑模式样式 */
-
+        /* 删除确认对话框样式 */
         .delete-confirm-btn.confirm {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
+            background: var(--gradient-danger);
             color: white;
         }
 
         .delete-confirm-btn.confirm:hover {
-            background: linear-gradient(135deg, #d32f2f, #c62828);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+            box-shadow: 0 4px 16px rgba(244, 67, 54, 0.3);
         }
 
         .delete-confirm-btn.cancel {
@@ -865,39 +1017,38 @@
         }
 
         .delete-confirm-btn.cancel:hover {
-            background: linear-gradient(135deg, #757575, #616161);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(100, 100, 100, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         /* GIF生成进度提示 */
         .gif-progress-toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 32px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(12px);
             color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 14px;
+            padding: 14px 28px;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
             font-weight: 500;
             z-index: 2000;
             display: none;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .gif-progress-toast.show {
             display: flex;
-            animation: toastFadeIn 0.3s ease-out;
+            animation: toastFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         @keyframes toastFadeIn {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px);
+                transform: translateX(-50%) translateY(16px);
             }
             to {
                 opacity: 1;
@@ -908,14 +1059,110 @@
         .gif-spinner {
             width: 16px;
             height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             border-top-color: white;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* 上传进度提示 */
+        .upload-progress-toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 16px 32px;
+            border-radius: var(--radius-full);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(26, 26, 46, 0.3);
+        }
+
+        .upload-progress-toast.show {
+            display: flex;
+            animation: toastFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 删除确认对话框 */
+        .delete-confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .delete-confirm-dialog.show {
+            display: flex;
+        }
+
+        .delete-confirm-box {
+            background: white;
+            border-radius: var(--radius-2xl);
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow-xl);
+            animation: confirmBoxIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes confirmBoxIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .delete-confirm-box h3 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            color: var(--color-text);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .delete-confirm-box p {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .delete-confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .delete-confirm-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-normal);
         }
 
         /* 移动端GIF预览对话框 */
@@ -933,8 +1180,8 @@
         /* 移动端优化 */
         @media (max-width: 480px) {
             .delete-confirm-box {
-                padding: 20px;
-                margin: 10px;
+                padding: 24px;
+                margin: 12px;
             }
 
             .delete-confirm-actions {
@@ -948,55 +1195,68 @@
             }
         }
 
-        /* 社区互动样式 */
+        /* ==================== 社区互动样式 ==================== */
         .community-section {
-            padding: 15px 0;
-            border-top: 1px solid #eee;
-            margin-top: 15px;
+            padding: 16px 0;
+            border-top: 1px solid var(--color-border);
+            margin-top: 16px;
         }
 
         .interaction-bar {
             display: flex;
             align-items: center;
-            gap: 20px;
-            padding: 10px 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            gap: 16px;
+            padding: 12px 16px;
+            background: rgba(26, 26, 46, 0.04);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
         }
 
         .like-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 16px;
+            padding: 10px 18px;
             background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-full);
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            color: #666;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
         }
 
         .like-btn:hover {
-            border-color: #ff4757;
-            color: #ff4757;
-            transform: scale(1.05);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+            transform: scale(1.08);
         }
 
         .like-btn.liked {
-            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            background: var(--gradient-accent);
             color: white;
-            border-color: #ff4757;
+            border-color: transparent;
+            box-shadow: 0 4px 16px rgba(232, 93, 117, 0.3);
         }
 
         .like-btn .heart {
-            font-size: 18px;
-            transition: transform 0.3s ease;
+            font-size: 16px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
         }
 
         .like-btn.liked .heart {
-            transform: scale(1.2);
+            transform: scale(1.3);
+            animation: heartbeat 0.5s ease-in-out;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.25); }
+            50% { transform: scale(0.95); }
+            75% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
 
         .like-count {
@@ -1008,20 +1268,21 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 16px;
+            padding: 10px 18px;
             background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-full);
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            color: #666;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
         }
 
         .comment-btn:hover {
-            border-color: #2196F3;
-            color: #2196F3;
-            transform: scale(1.05);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: scale(1.08);
         }
 
         .comment-count {
@@ -1030,32 +1291,61 @@
         }
 
         .comments-section {
-            margin-top: 15px;
+            margin-top: 16px;
             display: none;
         }
 
         .comments-section.show {
             display: block;
+            animation: slideDown 0.3s ease;
         }
 
         .comments-list {
-            max-height: 300px;
+            max-height: 320px;
             overflow-y: auto;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            padding-right: 4px;
+        }
+
+        /* 自定义滚动条 */
+        .comments-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .comments-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 3px;
+        }
+
+        .comments-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+        }
+
+        .comments-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.25);
         }
 
         .comment-item {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            padding: 14px;
+            background: rgba(26, 26, 46, 0.04);
+            border-radius: var(--radius-lg);
             margin-bottom: 10px;
-            animation: slideIn 0.3s ease;
+            border: 1px solid var(--color-border);
+            animation: slideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.2s ease;
+        }
+
+        .comment-item:hover {
+            background: rgba(26, 26, 46, 0.06);
+            border-color: rgba(26, 26, 46, 0.1);
+            transform: translateX(2px);
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
             to {
                 opacity: 1;
@@ -1072,19 +1362,20 @@
 
         .comment-author {
             font-weight: 600;
-            color: #333;
-            font-size: 13px;
+            color: var(--color-text);
+            font-size: 0.8125rem;
         }
 
         .comment-time {
-            font-size: 11px;
-            color: #999;
+            font-size: 0.6875rem;
+            color: rgba(0, 0, 0, 0.4);
+            font-weight: 500;
         }
 
         .comment-content {
-            color: #555;
-            font-size: 14px;
-            line-height: 1.5;
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.55;
             word-wrap: break-word;
         }
 
@@ -1095,65 +1386,76 @@
 
         .comment-input {
             flex: 1;
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
-            font-size: 14px;
+            padding: 12px 16px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
             font-family: inherit;
             resize: none;
-            height: 40px;
-            transition: border-color 0.3s ease;
+            height: 42px;
+            transition: all var(--transition-normal);
+            background: white;
         }
 
         .comment-input:focus {
             outline: none;
-            border-color: #2196F3;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+            background: #fafafa;
         }
 
         .comment-submit-btn {
-            padding: 8px 20px;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            padding: 10px 22px;
+            background: var(--gradient-info);
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: var(--radius-full);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.875rem;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
             white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
         }
 
         .comment-submit-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+        }
+
+        .comment-submit-btn:active {
+            transform: scale(1.02);
         }
 
         .comment-submit-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .no-comments {
             text-align: center;
-            color: #999;
+            color: var(--color-text-secondary);
             padding: 20px;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
 
         .login-prompt {
             text-align: center;
-            padding: 15px;
-            background: #fff3cd;
-            border-radius: 8px;
+            padding: 14px;
+            background: rgba(255, 193, 7, 0.15);
+            border-radius: var(--radius-lg);
             color: #856404;
-            font-size: 13px;
+            font-size: 0.8125rem;
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
         .loading-comments {
             text-align: center;
             padding: 20px;
-            color: #999;
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
         }
 
         @media (max-width: 768px) {
@@ -1167,6 +1469,24 @@
                 width: 100%;
                 justify-content: center;
             }
+        }
+
+        /* 添加骨架屏加载动画 */
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(0, 0, 0, 0.04) 0%,
+                rgba(0, 0, 0, 0.08) 50%,
+                rgba(0, 0, 0, 0.04) 100%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: var(--radius-sm);
         }
     </style>
 </head>
@@ -1194,36 +1514,11 @@
         <span>✏️</span> 正在编辑模式 - 点击"保存"保存更改，或"取消"放弃更改
     </div>
 
-    <!-- 照片上传区域 -->
-    <div class="upload-section">
-        <div class="upload-controls">
-            <button class="upload-btn" id="uploadBtn" disabled>
-                <span>📷</span> 选择照片（支持多选，先点击卡片）
-            </button>
-            <button class="edit-btn" id="editBtn">
-                <span>✏️</span> 编辑信息
-            </button>
-            <button class="clear-btn" id="refreshBtn" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
-                <span>🔄</span> 刷新图片
-            </button>
-            <button class="clear-btn" id="clearBtn">
-                <span>🗑️</span> 清理缓存
-            </button>
-            <button class="clear-btn" id="resetDefaultsBtn" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
-                <span>🔄</span> 恢复默认
-            </button>
-        </div>
-        <div class="storage-info" id="storageInfo">
-            <span>💾</span> <span id="storageCount">已存储 0 张图片</span>
-        </div>
-        <input type="file" id="fileInput" accept="image/*" multiple>
-    </div>
-
-    <!-- 卡片容器 -->
+    <!-- 编辑提示 -->
     <main class="card-container">
         <!-- 卡片 1 -->
         <div class="card" data-card-id="1">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Lantingji_Xu.jpg/440px-Lantingji_Xu.jpg" alt="兰亭序" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">王</span>
@@ -1290,7 +1585,7 @@
 
         <!-- 卡片 2 -->
         <div class="card" data-card-id="2">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Yan_Zhenqing_Ji_Zhi_Wen_Gao.jpg/440px-Yan_Zhenqing_Ji_Zhi_Wen_Gao.jpg" alt="祭侄文稿" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">颜</span>
@@ -1357,7 +1652,7 @@
 
         <!-- 卡片 3 -->
         <div class="card" data-card-id="3">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Xuan_Mi_Ta_Bei.jpg/440px-Xuan_Mi_Ta_Bei.jpg" alt="玄秘塔碑" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">柳</span>
@@ -1424,7 +1719,7 @@
 
         <!-- 卡片 4 -->
         <div class="card" data-card-id="4">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Huangzhou_Han Shi_Tie.jpg/440px-Huangzhou_Han_Shi_Tie.jpg" alt="寒食帖" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">苏</span>
@@ -1491,7 +1786,7 @@
 
         <!-- 卡片 5 -->
         <div class="card" data-card-id="5">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Mi_Fu_Shu_Su_Tie.jpg/440px-Mi_Fu_Shu_Su_Tie.jpg" alt="蜀素帖" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">米</span>
@@ -1558,7 +1853,7 @@
 
         <!-- 卡片 6 -->
         <div class="card" data-card-id="6">
-            <div class="select-hint">👆 点击选中</div>
+            <div class="select-hint">📷 点击上传照片</div>
             <div class="card-image">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Zhao_Mengfu_-_Xian_Temple_Inscription.jpg/440px-Zhao_Mengfu_-_Xian_Temple_Inscription.jpg" alt="玄妙观重修三门记" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                 <span class="card-placeholder" style="display:none">赵</span>
@@ -1629,10 +1924,38 @@
         <p>用 <span class="heart">❤️</span> 传承中华书法文化</p>
     </footer>
 
+    <!-- 照片上传区域 - 移至底部方便移动端操作 -->
+    <div class="upload-section">
+        <div class="upload-controls">
+            <button class="edit-btn" id="editBtn">
+                <span>✏️</span> 编辑信息
+            </button>
+            <button class="clear-btn" id="refreshBtn" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
+                <span>🔄</span> 刷新图片
+            </button>
+            <button class="clear-btn" id="clearBtn">
+                <span>🗑️</span> 清理缓存
+            </button>
+            <button class="clear-btn" id="resetDefaultsBtn" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                <span>🔄</span> 恢复默认
+            </button>
+        </div>
+        <div class="storage-info" id="storageInfo">
+            <span>💾</span> <span id="storageCount">已存储 0 张图片</span>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+
     <!-- GIF生成进度提示 -->
     <div class="gif-progress-toast" id="gifProgressToast">
         <div class="gif-spinner"></div>
         <span id="gifProgressText">正在生成GIF动图...</span>
+    </div>
+
+    <!-- 上传进度提示 -->
+    <div class="upload-progress-toast" id="uploadProgressToast">
+        <div class="gif-spinner"></div>
+        <span id="uploadProgressText">正在处理图片...</span>
     </div>
 
     <!-- 恢复默认确认对话框 -->
@@ -1685,9 +2008,8 @@
         let selectedCard = null;  // 当前选中的卡片
         let isEditMode = false;  // 是否处于编辑模式
         let editBtn = null;  // 编辑按钮
-        const uploadBtn = document.getElementById('uploadBtn');  // 上传按钮
-        const clearBtn = document.getElementById('clearBtn');  // 清理按钮
         const fileInput = document.getElementById('fileInput');  // 文件输入框
+        const clearBtn = document.getElementById('clearBtn');  // 清理按钮
         const storageInfo = document.getElementById('storageInfo');  // 存储信息显示
         const storageCount = document.getElementById('storageCount');  // 存储计数显示
         const cards = document.querySelectorAll('.card');  // 所有卡片
@@ -1862,6 +2184,7 @@
 
                 alert('登录成功！');
                 loadUserImages(); // 加载用户图片
+                await loadSavedCardInfo(); // 加载用户的卡片设置（多端同步）
 
             } catch (error) {
                 alert('登录失败：' + error.message);
@@ -1920,6 +2243,7 @@
                 if (data.access_token) {
                     saveUserSession(data);
                     alert(`注册成功！欢迎，${name}！`);
+                    await loadSavedCardInfo(); // 加载用户的卡片设置（多端同步）
                 }
 
             } catch (error) {
@@ -2147,7 +2471,6 @@
                 });
 
                 // 禁用上传功能
-                uploadBtn.disabled = true;
                 if (selectedCard) {
                     selectedCard.classList.remove('selected');
                     const hint = selectedCard.querySelector('.select-hint');
@@ -2167,8 +2490,7 @@
                     cancelCardEdit(card);
                 });
 
-                // 恢复上传功能
-                uploadBtn.disabled = true;
+                // 恢复上传功能（上传按钮已移除，点击卡片直接选择文件）
             }
         }
 
@@ -2302,9 +2624,9 @@
         }
 
         /**
-         * 恢复所有卡片为默认内容
+         * 恢复所有卡片为默认内容（本地+云端）
          */
-        function resetAllCardsToDefaults() {
+        async function resetAllCardsToDefaults() {
             cards.forEach(card => {
                 const cardId = card.getAttribute('data-card-id');
                 const defaultData = getDefaultCardData(cardId);
@@ -2325,8 +2647,46 @@
             // 清除localStorage中的卡片信息
             localStorage.removeItem(CARD_INFO_KEY);
 
+            // 如果用户已登录，也清除云端数据
+            if (currentUser) {
+                await clearCardSettingsFromCloud();
+            }
+
             // 显示成功提示
             alert('✅ 所有卡片已恢复为默认内容');
+        }
+
+        /**
+         * 清除云端卡片设置
+         */
+        async function clearCardSettingsFromCloud() {
+            if (!currentUser) {
+                return;
+            }
+
+            try {
+                const token = await getAccessToken();
+                if (!token) {
+                    return;
+                }
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/calligraphy_card_settings?user_id=eq.${currentUser.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.warn('清除云端卡片设置失败');
+                    return;
+                }
+
+                console.log('✅ 云端卡片设置已清除');
+            } catch (error) {
+                console.warn('清除云端卡片设置失败:', error);
+            }
         }
 
         /**
@@ -2383,17 +2743,72 @@
         }
 
         /**
-         * 保存卡片信息到localStorage
+         * 保存卡片信息到localStorage和云端
          * @param {string} cardId 卡片ID
          * @param {Object} data 卡片数据
          */
-        function saveCardInfo(cardId, data) {
+        async function saveCardInfo(cardId, data) {
             try {
+                // 1. 保存到localStorage（作为本地缓存）
                 const allCardInfo = getStoredCardInfo();
                 allCardInfo[cardId] = data;
                 localStorage.setItem(CARD_INFO_KEY, JSON.stringify(allCardInfo));
+
+                // 2. 如果用户已登录，同步到云端
+                if (currentUser && data) {
+                    await syncCardInfoToCloud(cardId, data);
+                }
             } catch (e) {
                 console.error('保存卡片信息失败:', e);
+            }
+        }
+
+        /**
+         * 将卡片信息同步到云端
+         * @param {string} cardId 卡片ID
+         * @param {Object} data 卡片数据
+         */
+        async function syncCardInfoToCloud(cardId, data) {
+            if (!currentUser) {
+                console.log('用户未登录，跳过云端同步');
+                return;
+            }
+
+            try {
+                const token = await getAccessToken();
+                if (!token) {
+                    console.log('无法获取访问令牌，跳过云端同步');
+                    return;
+                }
+
+                // 使用 upsert 函数保存到云端
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_card_settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        p_user_id: currentUser.id,
+                        p_card_id: parseInt(cardId),
+                        p_icon: data.icon || '🖌️',
+                        p_name: data.name || '',
+                        p_age: data.age || '',
+                        p_style_title: data.styleTitle || '',
+                        p_style_desc: data.styleDesc || ''
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.warn('云端同步失败（将继续使用本地存储）:', error);
+                    return;
+                }
+
+                console.log('✅ 卡片信息已同步到云端');
+            } catch (error) {
+                console.warn('云端同步失败（将继续使用本地存储）:', error);
             }
         }
 
@@ -2422,15 +2837,88 @@
         }
 
         /**
-         * 加载保存的卡片信息
+         * 从云端加载用户的卡片设置
+         * @returns {Promise<Object>} 用户卡片设置
          */
-        function loadSavedCardInfo() {
+        async function loadCardSettingsFromCloud() {
+            if (!currentUser) {
+                return {};
+            }
+
+            try {
+                const token = await getAccessToken();
+                if (!token) {
+                    console.log('无法获取访问令牌，跳过云端加载');
+                    return {};
+                }
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/calligraphy_card_settings?user_id=eq.${currentUser.id}&select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.warn('从云端加载卡片设置失败');
+                    return {};
+                }
+
+                const data = await response.json();
+
+                // 转换为卡片ID为键的对象
+                const cardSettings = {};
+                data.forEach(setting => {
+                    cardSettings[setting.card_id] = {
+                        icon: setting.icon,
+                        name: setting.name,
+                        age: setting.age,
+                        styleTitle: setting.style_title,
+                        styleDesc: setting.style_desc
+                    };
+                });
+
+                console.log('✅ 从云端加载了卡片设置:', cardSettings);
+                return cardSettings;
+            } catch (error) {
+                console.warn('从云端加载卡片设置失败:', error);
+                return {};
+            }
+        }
+
+        /**
+         * 加载保存的卡片信息（优先云端，其次本地）
+         */
+        async function loadSavedCardInfo() {
+            let cloudSettings = {};
+
+            // 1. 如果用户已登录，优先从云端加载
+            if (currentUser) {
+                cloudSettings = await loadCardSettingsFromCloud();
+            }
+
+            // 2. 获取本地存储的数据
+            const localSettings = getStoredCardInfo();
+
+            // 3. 合并数据（云端优先，本地作为备份）
             cards.forEach(card => {
                 const cardId = card.getAttribute('data-card-id');
-                const savedData = getCardInfo(cardId);
+                const cloudData = cloudSettings[cardId];
+                const localData = localSettings[cardId];
+
+                // 使用云端数据，如果没有则使用本地数据
+                const savedData = cloudData || localData;
 
                 if (savedData) {
                     updateCardDisplay(card, savedData);
+
+                    // 如果使用的是本地数据但存在云端数据，同步到本地
+                    if (localData && cloudData && currentUser) {
+                        // 云端数据更新，更新本地显示和存储
+                        updateCardDisplay(card, cloudData);
+                        saveCardInfo(cardId, cloudData);
+                    }
                 }
             });
         }
@@ -3724,14 +4212,12 @@
                 if (selectedCard) {
                     selectedCard.classList.remove('selected');
                     const oldHint = selectedCard.querySelector('.select-hint');
-                    if (oldHint) oldHint.textContent = '👆 点击选中';
+                    if (oldHint) oldHint.textContent = '📷 点击上传照片';
                 }
 
                 // 如果点击的是已选中的卡片，则取消选中
                 if (selectedCard === this) {
                     selectedCard = null;
-                    uploadBtn.disabled = true;
-                    uploadBtn.innerHTML = '<span>📷</span> 选择照片（支持多选，先点击卡片）';
                     return;
                 }
 
@@ -3741,20 +4227,16 @@
                 const newHint = this.querySelector('.select-hint');
                 if (newHint) newHint.textContent = '✅ 已选中';
 
-                // 启用上传按钮
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<span>📷</span> 添加照片（支持多选）';
+                // 立即弹出文件选择对话框（无需点击上传按钮）
+                setTimeout(() => {
+                    fileInput.click();
+                }, 150);
             });
         });
 
         // ==================== 照片上传功能 ====================
 
-        // 点击上传按钮时触发文件选择对话框
-        uploadBtn.addEventListener('click', function() {
-            if (selectedCard) {
-                fileInput.click();  // 触发文件选择对话框
-            }
-        });
+        // 文件选择对话框触发后，不再需要单独的上传按钮
 
         // 刷新按钮事件（刷新本地存储）
         const refreshBtn = document.getElementById('refreshBtn');
@@ -3879,9 +4361,13 @@
             }
 
             try {
-                // 显示正在处理
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<span>⏳</span> 正在处理图片...';
+                // 显示上传进度提示
+                const uploadToast = document.getElementById('uploadProgressToast');
+                const uploadProgressText = document.getElementById('uploadProgressText');
+                if (uploadToast) {
+                    uploadProgressText.textContent = '正在处理图片...';
+                    uploadToast.classList.add('show');
+                }
 
                 // 处理所有图片
                 const newImages = [];
@@ -3889,14 +4375,18 @@
 
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    uploadBtn.innerHTML = `<span>⏳</span> 正在处理第 ${i + 1}/${files.length} 张图片...`;
+                    if (uploadProgressText) {
+                        uploadProgressText.textContent = `正在处理第 ${i + 1}/${files.length} 张图片...`;
+                    }
 
                     let imageData;
 
                     // 尝试上传到 Supabase
                     if (useSupabase) {
                         try {
-                            uploadBtn.innerHTML = `<span>⏳</span> 正在上传第 ${i + 1}/${files.length} 张图片到云端...`;
+                            if (uploadProgressText) {
+                                uploadProgressText.textContent = `正在上传第 ${i + 1}/${files.length} 张图片到云端...`;
+                            }
 
                             // 上传到 Supabase (使用 REST API)
                             const result = await uploadToSupabase(file, cardId);
@@ -3943,7 +4433,7 @@
 
                 // 更新选中提示
                 const hint = selectedCard.querySelector('.select-hint');
-                if (hint) hint.textContent = `✅ 已保存 ${allImages.length} 张图片`;
+                if (hint) hint.textContent = '✅ 已选中 - 继续添加照片';
 
                 // 显示成功提示
                 const storageType = cloudCount > 0 ? '云端' : '本地';
@@ -3959,9 +4449,11 @@
                 console.error('图片处理失败:', error);
                 alert('图片处理失败：' + error.message);
             } finally {
-                // 恢复按钮状态
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = '<span>📷</span> 添加照片（支持多选）';
+                // 隐藏进度提示
+                const uploadToast = document.getElementById('uploadProgressToast');
+                if (uploadToast) {
+                    uploadToast.classList.remove('show');
+                }
                 fileInput.value = '';
             }
         });
