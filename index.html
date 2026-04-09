@@ -1573,43 +1573,84 @@
 
         /**
          * 加载用户图片
+         * 同时加载演示数据和用户专属数据
          */
         async function loadUserImages() {
             if (!currentUser) return;
 
             try {
-                const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/list?prefix=${currentUser.id}/`, {
+                // 1. 加载演示数据（路径格式：{cardId}/{fileName}）
+                const demoResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/list?prefix=`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prefix: '',
+                        limit: 1000
+                    })
+                });
+
+                if (!demoResponse.ok) {
+                    throw new Error('加载图片失败');
+                }
+
+                const demoData = await demoResponse.json();
+                const demoFiles = demoData || [];
+
+                // 2. 加载用户专属数据（路径格式：{userId}/{cardId}/{fileName}）
+                const userResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/list?prefix=${currentUser.id}/`, {
                     headers: {
                         'apikey': SUPABASE_KEY,
                         'Authorization': `Bearer ${localStorage.getItem(USER_SESSION_KEY) ? JSON.parse(localStorage.getItem(USER_SESSION_KEY)).access_token : SUPABASE_KEY}`
                     }
                 });
 
-                if (!response.ok) {
-                    throw new Error('加载图片失败');
+                let userFiles = [];
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    userFiles = userData || [];
                 }
 
-                const data = await response.json();
-                const files = data || [];
+                // 3. 合并所有文件
+                const allFiles = [...demoFiles, ...userFiles];
 
-                // 按卡片分组
+                // 4. 按卡片分组
                 const userImages = {};
-                files.forEach(file => {
+                allFiles.forEach(file => {
                     if (file.name === '.emptyFolderPlaceholder') return;
-                    const match = file.name.match(/^(\d+)\/(.+)$/);
-                    if (match) {
-                        const cardId = match[1];
-                        const fileName = match[2];
+
+                    // 匹配两种路径格式：
+                    // - 演示数据：{cardId}/{fileName}
+                    // - 用户数据：{userId}/{cardId}/{fileName}
+                    const parts = file.name.split('/');
+                    let cardId = null;
+                    let relativePath = file.name;
+
+                    // 判断路径格式
+                    if (parts.length === 2 && parts[0].match(/^\d+$/)) {
+                        // 演示数据：{cardId}/{fileName}
+                        cardId = parts[0];
+                    } else if (parts.length === 3 && parts[0] === currentUser.id && parts[1].match(/^\d+$/)) {
+                        // 用户数据：{userId}/{cardId}/{fileName}
+                        cardId = parts[1];
+                        relativePath = `${currentUser.id}/${cardId}/${parts[2]}`;
+                    } else {
+                        return; // 跳过不符合格式的文件
+                    }
+
+                    if (cardId) {
                         if (!userImages[cardId]) userImages[cardId] = [];
                         userImages[cardId].push({
-                            url: `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${currentUser.id}/${cardId}/${fileName}`,
+                            url: `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${file.name}`,
                             timestamp: new Date(file.created_at).getTime(),
                             isCloud: true
                         });
                     }
                 });
 
-                // 更新卡片显示
+                // 5. 更新卡片显示
                 Object.keys(userImages).forEach(cardId => {
                     const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
                     if (card && userImages[cardId].length > 0) {
